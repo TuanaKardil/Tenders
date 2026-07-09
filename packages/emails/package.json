@@ -1,0 +1,24 @@
+{
+  "name": "@repo/emails",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/templates/*.tsx"
+  },
+  "scripts": {
+    "dev": "email dev --dir src/templates --port 3333",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-email/components": "^0.0.36",
+    "@repo/config": "workspace:*",
+    "react": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "react-email": "^4.0.0",
+    "typescript": "^5.8.0"
+  }
+}

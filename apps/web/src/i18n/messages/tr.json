@@ -1,0 +1,25 @@
+{
+  "common": {
+    "appName": "Tenderlist",
+    "tagline": "Bir daha asla ihale kaçırmayın",
+    "signIn": "Giriş yap",
+    "signUp": "Hemen başla",
+    "search": "Ara",
+    "loading": "Yükleniyor…"
+  },
+  "landing": {
+    "heroTitle": "Afrika'daki her ihale. Tek aramayla.",
+    "heroSubtitle": "Afrika genelindeki kamu ve özel sektör ihale ilanlarını topluyor, çevirip özetliyor ve ilgili bir fırsat çıktığı anda size haber veriyoruz.",
+    "searchPlaceholder": "İhale arayın — örn. güneş enerjisi, yol yapımı, tıbbi malzeme",
+    "ctaPrimary": "İlk uyarınızı kurun",
+    "ctaSecondary": "İhalelere göz atın"
+  },
+  "nav": {
+    "search": "Ara",
+    "map": "Harita",
+    "pricing": "Fiyatlandırma",
+    "dashboard": "Panel",
+    "watchlist": "Takip listesi",
+    "alerts": "Uyarılar"
+  }
+}
