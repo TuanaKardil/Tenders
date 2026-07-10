@@ -6,6 +6,8 @@ import { eq } from "drizzle-orm";
 import { ExternalLinkIcon, FileTextIcon } from "lucide-react";
 import { db, tenders, sources, documents as documentsTable } from "@repo/db";
 import { similarTenders } from "@/lib/meilisearch";
+import { JsonLd } from "@/components/seo/json-ld";
+import { alternatesFor, breadcrumbLd, absoluteUrl } from "@/lib/seo";
 import { TenderCard } from "@/components/tenders/tender-card";
 import { DeadlineChip } from "@/components/tenders/deadline-chip";
 import { WatchlistButton } from "@/components/tenders/watchlist-button";
@@ -47,7 +49,13 @@ export async function generateMetadata({ params }: TenderPageProps): Promise<Met
   return {
     title,
     description: summary?.slice(0, 160),
-    alternates: { canonical: `/tenders/${slug}` },
+    alternates: alternatesFor(`/tenders/${slug}`, locale),
+    openGraph: {
+      type: "article",
+      title,
+      description: summary?.slice(0, 160) ?? undefined,
+      url: absoluteUrl(`/tenders/${slug}`),
+    },
   };
 }
 
@@ -108,6 +116,13 @@ export default async function TenderPage({ params }: TenderPageProps) {
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Tenderlist", url: absoluteUrl("/") },
+          { name: loc === "tr" ? "Ara" : "Search", url: absoluteUrl("/search") },
+          { name: title, url: absoluteUrl(`/tenders/${slug}`) },
+        ])}
+      />
       {/* Header */}
       <div className="mb-2 flex items-center gap-2 text-sm text-neutral-500">
         <span aria-hidden>{countryFlag(tender.country)}</span>

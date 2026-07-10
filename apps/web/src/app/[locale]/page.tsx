@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -5,8 +6,19 @@ import { COUNTRIES } from "@repo/config/constants";
 import { searchTenders } from "@/lib/meilisearch";
 import { SearchBar } from "@/components/search/search-bar";
 import { TenderCard } from "@/components/tenders/tender-card";
+import { JsonLd } from "@/components/seo/json-ld";
+import { alternatesFor, organizationLd, websiteLd } from "@/lib/seo";
 
 export const revalidate = 900;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return { alternates: alternatesFor("/", locale) };
+}
 
 export default async function LandingPage({
   params,
@@ -41,6 +53,8 @@ export default async function LandingPage({
 
   return (
     <main>
+      <JsonLd data={organizationLd()} />
+      <JsonLd data={websiteLd()} />
       {/* Hero */}
       <section className="border-b border-neutral-100 bg-gradient-to-b from-neutral-50 to-white">
         <div className="mx-auto max-w-4xl px-6 pb-16 pt-20 text-center">
