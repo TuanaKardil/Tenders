@@ -219,5 +219,30 @@
         ]
       }
     }
+  },
+  "errors": {
+    "notFoundTitle": "Page not found",
+    "notFoundHint": "The page you're looking for doesn't exist or may have moved.",
+    "backHome": "Back home",
+    "errorTitle": "Something went wrong",
+    "errorHint": "An unexpected error occurred. Please try again.",
+    "retry": "Try again"
+  },
+  "legal": {
+    "draftNotice": "Draft — review with legal counsel before launch.",
+    "lastUpdated": "Last updated",
+    "contact": "Questions? Contact us at",
+    "terms": {
+      "title": "Terms of Service",
+      "body": "These terms govern your use of Tenderlist. Tenderlist aggregates publicly available and licensed procurement notices and links to their original sources; we are not a party to any tender and make no guarantee of accuracy, completeness or availability. Always rely on the original notice for binding information. Use of the service is at your own risk, subject to the plan limits shown at checkout."
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "body": "We collect the account information you provide (via our authentication provider), your saved searches, watchlist and alert preferences, and basic usage analytics, in order to run the service and send the alerts you request. We do not sell your personal data. Payment is handled by our payment provider; we do not store card details. You can request access to or deletion of your data at any time."
+    },
+    "takedown": {
+      "title": "Takedown & Corrections",
+      "body": "If a notice attributed to your organization is inaccurate, outdated, or should not be listed, tell us and we will review and, where appropriate, correct or remove it promptly. Include the tender link and the reason for your request."
+    }
   }
 }

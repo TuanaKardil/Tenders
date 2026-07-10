@@ -219,5 +219,30 @@
         ]
       }
     }
+  },
+  "errors": {
+    "notFoundTitle": "Sayfa bulunamadı",
+    "notFoundHint": "Aradığınız sayfa mevcut değil veya taşınmış olabilir.",
+    "backHome": "Ana sayfaya dön",
+    "errorTitle": "Bir şeyler ters gitti",
+    "errorHint": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
+    "retry": "Tekrar dene"
+  },
+  "legal": {
+    "draftNotice": "Taslak — yayın öncesi hukuk danışmanıyla gözden geçirin.",
+    "lastUpdated": "Son güncelleme",
+    "contact": "Sorularınız için bize ulaşın:",
+    "terms": {
+      "title": "Kullanım Koşulları",
+      "body": "Bu koşullar Tenderlist'i kullanımınızı düzenler. Tenderlist, kamuya açık ve lisanslı ihale ilanlarını derler ve orijinal kaynaklarına bağlantı verir; hiçbir ihalenin tarafı değiliz ve doğruluk, eksiksizlik veya erişilebilirlik garantisi vermeyiz. Bağlayıcı bilgiler için her zaman orijinal ilanı esas alın. Hizmetin kullanımı, ödeme sırasında gösterilen plan limitlerine tabi olarak, kendi sorumluluğunuzdadır."
+    },
+    "privacy": {
+      "title": "Gizlilik Politikası",
+      "body": "Hizmeti çalıştırmak ve talep ettiğiniz uyarıları göndermek için; sağladığınız hesap bilgilerini (kimlik doğrulama sağlayıcımız aracılığıyla), kayıtlı aramalarınızı, takip listenizi ve uyarı tercihlerinizi ve temel kullanım analitiğini toplarız. Kişisel verilerinizi satmayız. Ödeme, ödeme sağlayıcımız tarafından işlenir; kart bilgilerinizi saklamayız. Verilerinize erişim veya silme talebini istediğiniz zaman iletebilirsiniz."
+    },
+    "takedown": {
+      "title": "Kaldırma ve Düzeltme",
+      "body": "Kuruluşunuza atfedilen bir ilan hatalı, güncel değil veya listelenmemesi gerekiyorsa bize bildirin; inceleyip uygun olduğunda hızla düzeltir veya kaldırırız. İhale bağlantısını ve talebinizin gerekçesini ekleyin."
+    }
   }
 }
