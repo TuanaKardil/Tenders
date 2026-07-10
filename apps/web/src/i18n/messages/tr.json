@@ -166,5 +166,58 @@
     "clickLimitTitle": "Aylık bağlantı limitine ulaştınız",
     "clickLimitHint": "Ücretsiz plan ayda 5 orijinal kaynak tıklaması içerir. Sınırsız erişim için yükseltin.",
     "cta": "Planları gör"
+  },
+  "pricing": {
+    "title": "Basit, şeffaf fiyatlandırma",
+    "subtitle": "Ücretsiz başla. Daha fazla kazanmaya hazır olunca yükselt.",
+    "monthly": "Aylık",
+    "annual": "Yıllık",
+    "annualSave": "2 ay ücretsiz",
+    "perMonth": "/ay",
+    "perYear": "/yıl",
+    "mostPopular": "En popüler",
+    "notConfigured": "Ödeme henüz yapılandırılmadı.",
+    "limitBanner": "Ücretsiz plan limitine ulaştınız. Sınırsız erişim için aşağıdan bir plan seçin.",
+    "cta": {
+      "free": "Başla",
+      "upgrade": "Yükselt",
+      "current": "Mevcut plan",
+      "signIn": "Yükseltmek için giriş yap"
+    },
+    "plans": {
+      "free": {
+        "name": "Ücretsiz",
+        "tagline": "Platformu tanımak için",
+        "features": [
+          "Günde 10 arama",
+          "Son 30 günün ihaleleri",
+          "1 haftalık uyarı",
+          "10 takip listesi öğesi",
+          "3 örnek ihalede AI özeti"
+        ]
+      },
+      "starter": {
+        "name": "Starter",
+        "tagline": "Aktif teklif verenler için",
+        "features": [
+          "Sınırsız arama ve tam arşiv",
+          "10 günlük uyarı",
+          "Sınırsız takip listesi",
+          "Her ihalede AI özeti",
+          "Sınırsız orijinal kaynak tıklaması"
+        ]
+      },
+      "pro": {
+        "name": "Pro",
+        "tagline": "Kazanan ekipler için",
+        "features": [
+          "Starter'daki her şey",
+          "Anlık dahil 30 uyarı",
+          "Sonuçları CSV dışa aktarma",
+          "AI uygunluk analizi",
+          "Öncelikli destek"
+        ]
+      }
+    }
   }
 }

@@ -166,5 +166,58 @@
     "clickLimitTitle": "Monthly link limit reached",
     "clickLimitHint": "The Free plan includes 5 original-source clicks per month. Upgrade for unlimited access.",
     "cta": "See plans"
+  },
+  "pricing": {
+    "title": "Simple, transparent pricing",
+    "subtitle": "Start free. Upgrade when you're ready to win more.",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "annualSave": "2 months free",
+    "perMonth": "/mo",
+    "perYear": "/yr",
+    "mostPopular": "Most popular",
+    "notConfigured": "Checkout isn't configured yet.",
+    "limitBanner": "You've reached a Free-plan limit. Pick a plan below for unlimited access.",
+    "cta": {
+      "free": "Get started",
+      "upgrade": "Upgrade",
+      "current": "Current plan",
+      "signIn": "Sign in to upgrade"
+    },
+    "plans": {
+      "free": {
+        "name": "Free",
+        "tagline": "Get a feel for the platform",
+        "features": [
+          "10 searches per day",
+          "Last 30 days of tenders",
+          "1 weekly alert",
+          "10 watchlist items",
+          "AI summaries on 3 sample tenders"
+        ]
+      },
+      "starter": {
+        "name": "Starter",
+        "tagline": "For active bidders",
+        "features": [
+          "Unlimited search & full archive",
+          "10 daily alerts",
+          "Unlimited watchlist",
+          "AI summaries on every tender",
+          "Unlimited original-source clicks"
+        ]
+      },
+      "pro": {
+        "name": "Pro",
+        "tagline": "For teams that win",
+        "features": [
+          "Everything in Starter",
+          "30 alerts including instant",
+          "CSV export of results",
+          "AI eligibility analysis",
+          "Priority support"
+        ]
+      }
+    }
   }
 }

@@ -13,6 +13,8 @@
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "@clerk/nextjs": "^6.20.0",
+    "@paddle/paddle-js": "^1.6.4",
+    "@paddle/paddle-node-sdk": "^3.8.0",
     "@repo/config": "workspace:*",
     "@repo/db": "workspace:*",
     "bullmq": "^5.52.0",
