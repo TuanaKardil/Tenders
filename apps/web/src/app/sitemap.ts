@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { eq } from "drizzle-orm";
 import { db, tenders } from "@repo/db";
-import { absoluteUrl } from "@/lib/seo";
+import { COUNTRY_CODES, SECTOR_SLUGS } from "@repo/config/constants";
+import { absoluteUrl, SEO_LIVE } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -28,6 +29,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority,
     alternates: { languages: withAlternates(path) },
   }));
+
+  // Programmatic SEO landings only enter the sitemap once real data is live.
+  if (SEO_LIVE) {
+    const landingPaths = [
+      ...COUNTRY_CODES.map((c) => `/countries/${c.toLowerCase()}`),
+      ...SECTOR_SLUGS.map((s) => `/sectors/${s}`),
+    ];
+    for (const path of landingPaths) {
+      entries.push({
+        url: absoluteUrl(path),
+        changeFrequency: "daily",
+        priority: 0.5,
+        alternates: { languages: withAlternates(path) },
+      });
+    }
+  }
 
   try {
     const rows = await db

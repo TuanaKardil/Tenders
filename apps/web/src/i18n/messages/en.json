@@ -220,6 +220,24 @@
       }
     }
   },
+  "landings": {
+    "countryTitle": "Public tenders in {name}",
+    "sectorTitle": "{name} tenders worldwide",
+    "countryIntro": "Browse open and recent public and private-sector tenders in {name}, with AI summaries and direct links to the original source. Set an alert to get new {name} opportunities by email.",
+    "sectorIntro": "Browse open and recent {name} tenders from around the world, with AI summaries and direct links to the original source. Set an alert to get new {name} opportunities by email.",
+    "statOpen": "open tenders",
+    "statSectors": "sectors",
+    "statCountries": "countries",
+    "browse": "Browse all",
+    "empty": "No open tenders here right now — set an alert and we'll email you when one appears.",
+    "faqTitle": "Frequently asked questions",
+    "faqQ1": "How often are {name} tenders updated?",
+    "faqA1": "We refresh listings continuously from official sources and email you the moment a new match appears.",
+    "faqQ2": "Is searching {name} tenders free?",
+    "faqA2": "Yes — you can search and preview tenders for free. Paid plans unlock unlimited search, the full archive and faster alerts.",
+    "faqQ3": "Where do {name} tenders come from?",
+    "faqA3": "Each listing links to its original official source. Always rely on the original notice for binding details."
+  },
   "errors": {
     "notFoundTitle": "Page not found",
     "notFoundHint": "The page you're looking for doesn't exist or may have moved.",

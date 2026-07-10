@@ -4,6 +4,13 @@ export const SITE_URL = (
 
 export const SITE_NAME = "Tenderlist";
 
+/**
+ * Whether programmatic SEO pages (countries/sectors) may be indexed.
+ * Off by default so sample/seed data is never indexed — flip to "true" only
+ * once real, sourced tender data is live.
+ */
+export const SEO_LIVE = process.env.NEXT_PUBLIC_SEO_LIVE === "true";
+
 /** Absolute URL for a locale-less path (e.g. "/tenders/foo"). */
 export function absoluteUrl(path: string): string {
   return `${SITE_URL}${path === "/" ? "" : path}` || SITE_URL;

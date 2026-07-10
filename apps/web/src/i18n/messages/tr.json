@@ -220,6 +220,24 @@
       }
     }
   },
+  "landings": {
+    "countryTitle": "{name} kamu ihaleleri",
+    "sectorTitle": "Dünya genelinde {name} ihaleleri",
+    "countryIntro": "{name} ülkesindeki açık ve güncel kamu ile özel sektör ihalelerini AI özetleri ve orijinal kaynağa doğrudan bağlantılarla inceleyin. Yeni {name} fırsatlarını e-postayla almak için bir uyarı kurun.",
+    "sectorIntro": "Dünya genelindeki açık ve güncel {name} ihalelerini AI özetleri ve orijinal kaynağa doğrudan bağlantılarla inceleyin. Yeni {name} fırsatlarını e-postayla almak için bir uyarı kurun.",
+    "statOpen": "açık ihale",
+    "statSectors": "sektör",
+    "statCountries": "ülke",
+    "browse": "Tümüne göz at",
+    "empty": "Şu anda burada açık ihale yok — bir uyarı kurun, biri çıktığında e-posta gönderelim.",
+    "faqTitle": "Sıkça sorulan sorular",
+    "faqQ1": "{name} ihaleleri ne sıklıkla güncellenir?",
+    "faqA1": "İlanları resmi kaynaklardan sürekli güncelliyor ve yeni bir eşleşme çıktığı anda size e-posta gönderiyoruz.",
+    "faqQ2": "{name} ihalelerinde arama ücretsiz mi?",
+    "faqA2": "Evet — ihaleleri ücretsiz arayıp önizleyebilirsiniz. Ücretli planlar sınırsız arama, tam arşiv ve daha hızlı uyarı açar.",
+    "faqQ3": "{name} ihaleleri nereden geliyor?",
+    "faqA3": "Her ilan kendi orijinal resmi kaynağına bağlanır. Bağlayıcı bilgiler için her zaman orijinal ilanı esas alın."
+  },
   "errors": {
     "notFoundTitle": "Sayfa bulunamadı",
     "notFoundHint": "Aradığınız sayfa mevcut değil veya taşınmış olabilir.",
