@@ -20,11 +20,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Tenderlist — Tender discovery for Africa",
+    default: "Tenderlist — Global tender discovery",
     template: "%s · Tenderlist",
   },
   description:
-    "Search, track and win public and private-sector tenders across Africa. Alerts, summaries and direct links to original sources.",
+    "Search, track and win public and private-sector tenders worldwide. Alerts, summaries and direct links to original sources.",
 };
 
 export function generateStaticParams() {

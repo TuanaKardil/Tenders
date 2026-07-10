@@ -8,8 +8,8 @@
     "loading": "Loading…"
   },
   "landing": {
-    "heroTitle": "Every African tender. One search away.",
-    "heroSubtitle": "We aggregate public and private procurement notices across Africa, translate and summarize them, and alert you the moment something relevant appears.",
+    "heroTitle": "Every tender, worldwide. One search away.",
+    "heroSubtitle": "We aggregate public and private procurement notices from around the world, translate and summarize them, and alert you the moment something relevant appears.",
     "searchPlaceholder": "Search tenders — e.g. solar, road construction, medical supplies",
     "ctaPrimary": "Set up your first alert",
     "ctaSecondary": "Browse tenders",
@@ -156,7 +156,7 @@
     "notFound": "Tender not found"
   },
   "map": {
-    "title": "Tenders across Africa",
+    "title": "Tenders worldwide",
     "subtitle": "Click a country to see its open tenders.",
     "viewAll": "View all in search"
   }

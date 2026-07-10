@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
+import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 
 export async function SiteHeader() {
   const t = await getTranslations("nav");
@@ -33,6 +34,7 @@ export async function SiteHeader() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-3">
+          <LocaleSwitcher />
           <SignedOut>
             <Link href="/sign-in" className="text-sm text-neutral-600 hover:text-neutral-900">
               {common("signIn")}
