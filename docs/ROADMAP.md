@@ -64,9 +64,11 @@ Sonraya (fazlarla gelir): MapTiler (harita tile), Paddle (1d), PostHog + Sentry 
 
 ---
 
-## Faz 1d — Gelir (kod ✅ bitti, Paddle hesabı bekliyor)
+## Faz 1d — Gelir (kod ✅ bitti, aktivasyon kullanıcı kararıyla ertelendi)
 
-Kod tamam ve doğrulandı (typecheck/lint/test yeşil, sayfalar tarayıcıda gezildi). **Aktive olması için senin Paddle sandbox kurulumun gerekli** (KURULUM.md Faz 1d): sandbox hesabı → `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `NEXT_PUBLIC_PADDLE_ENV`; Catalog'da Starter/Pro ürünleri → 4 price ID (`NEXT_PUBLIC_PADDLE_PRICE_*`); deploy sonrası webhook → `/api/webhooks/paddle`. Env gelince checkout butonları ve abonelik→plan akışı otomatik çalışır.
+> ⏸️ **Ödeme aktivasyonu şimdilik park edildi (kullanıcı kararı).** Kod uykuda: checkout "not configured", webhook "not configured" döner — maliyet/yan etki yok. Sağlayıcı kararı: **Paddle** (MoR, global, düşük-fiyatlı B2B için taksit avantajı zayıf olduğundan iyzico şimdilik gereksiz; Stripe TR merkezli tüzel kişilikte açılamaz). iyzico ancak TR ana düşük-fiyatlı kanal olursa eklenecek — mimari (`subscriptions` + `planFor`) sağlayıcı-bağımsız, ekleme = 1 webhook + 1 checkout.
+
+Kod tamam ve doğrulandı (typecheck/lint/test yeşil, sayfalar tarayıcıda gezildi). **Aktive olması için Paddle sandbox kurulumu gerekli** (KURULUM.md Faz 1d): sandbox hesabı → `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `NEXT_PUBLIC_PADDLE_ENV`; Catalog'da Starter/Pro ürünleri → 4 price ID (`NEXT_PUBLIC_PADDLE_PRICE_*`); deploy sonrası webhook → `/api/webhooks/paddle`. Env gelince checkout butonları ve abonelik→plan akışı otomatik çalışır.
 
 Yapılanlar:
 
