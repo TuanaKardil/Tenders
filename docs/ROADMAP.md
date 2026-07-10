@@ -89,9 +89,11 @@ Yapılanlar:
 - ✅ **OG:** site geneli varsayılan + `tenders/[slug]/opengraph-image.tsx` (`next/og`); intl middleware'den hariç tutuldu. Görsel doğrulandı.
 - ✅ **Legal + footer:** `/terms`, `/privacy`, `/takedown` (taslak içerik, açıkça işaretli) + keşif için footer. Blog ⏳.
 - ✅ **Boş/hata:** `[locale]/not-found.tsx`, `error.tsx`, kök `global-error.tsx` (i18n). Ek `loading.tsx`'ler ⏳.
-- ⏳ **Programatik SEO:** `/countries/[country]`, `/sectors/[sector]` (dinamik stat + liste + FAQPage schema). Yüksek SEO değeri, veri hazır.
+- ✅ **Programatik SEO:** `/countries/[country]` + `/sectors/[sector]` (dinamik stat + liste + FAQPage schema). **`NEXT_PUBLIC_SEO_LIVE` bayrağıyla korumalı** — varsayılan kapalı; seed/örnek veri indekslenmez ve sitemap'e girmez. Gerçek veri gelince `true` yap.
 - ⏳ **Gözlemlenebilirlik:** Sentry (`instrumentation.ts`, web+worker), PostHog provider + funnel event'leri (env gelince aktive olur).
-- ⏳ **Blog** (MDX iskelet) · **Playwright smoke** · Lighthouse mobil >85.
+- ⏳ **Blog** (MDX iskelet) · **Playwright smoke** · ek `loading.tsx`'ler · Lighthouse mobil >85.
+
+> ⚠️ **Veri notu:** Seed ihaleleri örnektir, kullanılmayacak. Gerçek ihale kaynakları kurucudan gelecek (Python scraper → `/api/ingest`). Programatik SEO indekslemesi (`NEXT_PUBLIC_SEO_LIVE`) ve AI worker (çeviri/özet/çıkarım) o gerçek veriyle açılacak.
 
 ---
 
