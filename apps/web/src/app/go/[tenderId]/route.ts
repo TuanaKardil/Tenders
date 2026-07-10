@@ -3,13 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { auth } from "@clerk/nextjs/server";
 import { db, tenders, redirectClicks, users } from "@repo/db";
+import { consumeQuota } from "@/server/quota";
 
 export const runtime = "nodejs";
 
-/**
- * Tracked redirect to the original notice.
- * TODO(phase 1d): enforce the free-plan monthly click quota here.
- */
+/** Tracked redirect to the original notice, gated by the free-plan click quota. */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ tenderId: string }> }
@@ -42,6 +40,16 @@ export async function GET(
     }
   } catch {
     // auth unavailable (e.g. during build) — treat as anonymous
+  }
+
+  // Free plan caps monthly original-source clicks. Over the cap → send to pricing.
+  if (userId) {
+    const quota = await consumeQuota(userId, "click");
+    if (!quota.allowed) {
+      return NextResponse.redirect(new URL("/pricing?limit=clicks", request.url), {
+        status: 302,
+      });
+    }
   }
 
   const ip =

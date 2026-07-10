@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./entitlements": "./src/entitlements.ts",
+    "./quota": "./src/quota.ts",
     "./constants": "./src/constants.ts",
     "./queues": "./src/queues.ts",
     "./ingest": "./src/ingest.ts",

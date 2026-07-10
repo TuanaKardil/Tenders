@@ -159,5 +159,12 @@
     "title": "Dünya genelinde ihaleler",
     "subtitle": "Açık ihalelerini görmek için bir ülkeye tıklayın.",
     "viewAll": "Tümünü aramada gör"
+  },
+  "upgrade": {
+    "searchLimitTitle": "Günlük arama limitine ulaştınız",
+    "searchLimitHint": "Ücretsiz plan günde 10 arama içerir. Sınırsız arama ve tam arşiv erişimi için yükseltin.",
+    "clickLimitTitle": "Aylık bağlantı limitine ulaştınız",
+    "clickLimitHint": "Ücretsiz plan ayda 5 orijinal kaynak tıklaması içerir. Sınırsız erişim için yükseltin.",
+    "cta": "Planları gör"
   }
 }

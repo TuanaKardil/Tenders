@@ -71,7 +71,7 @@ Sonraya (fazlarla gelir): MapTiler (harita tile), Paddle (1d), PostHog + Sentry 
 - `packages/config/src/quota.ts` + `apps/web/src/server/quota.ts` — Redis `INCR`+TTL sayaçları (`q:search:{uid}:{gün}`, `q:detail`/`q:click:{uid}:{ay}`).
 - `apps/web/src/app/[locale]/pricing/page.tsx` — 3 plan + karşılaştırma + aylık/yıllık + Paddle overlay. Yeni i18n `pricing`.
 - `apps/web/src/app/api/webhooks/paddle/route.ts` — imza doğrula → `subscriptions` upsert.
-- Kota gate'leri: `/go/[tenderId]` (click), `/search` (searchesPerDay + archiveDays), `/tenders/[slug]` (detailViews).
+- Kota gate'leri: ✅ `/go/[tenderId]` (click), ✅ `/search` (searchesPerDay + archiveDays). ⏸️ `/tenders/[slug]` (detailViews) **bilinçli ertelendi** — per-user gate detay sayfasını dinamikleştirip ISR/SEO'yu bozardı; sonra soft/client-side sayaçla ele alınacak.
 - Entitlement uygulaması: `aiSummaries`, `csvExport` (Pro), `eligibilityAi` (Pro).
 - `<UpgradePrompt>` + `/pricing` CTA'ları.
 - E-posta: `quota-hit.tsx` + `trial-payment-issue.tsx` template + email-dispatch renderer.

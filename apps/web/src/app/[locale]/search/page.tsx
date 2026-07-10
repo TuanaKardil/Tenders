@@ -4,11 +4,15 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 import { parseSearchParams } from "@repo/config/search";
 import { searchTenders } from "@/lib/meilisearch";
+import { getCurrentUser } from "@/server/auth";
+import { entitlementsForUser } from "@/server/plan";
+import { consumeQuota } from "@/server/quota";
 import { SearchBar } from "@/components/search/search-bar";
 import { FacetSidebar } from "@/components/search/facet-sidebar";
 import { FilterChips } from "@/components/search/filter-chips";
 import { SaveSearchButton } from "@/components/search/save-search-button";
 import { TenderCard } from "@/components/tenders/tender-card";
+import { UpgradePrompt } from "@/components/plan/upgrade-prompt";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
@@ -28,17 +32,30 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
   setRequestLocale(locale);
   const sp = await searchParams;
   const t = await getTranslations("search");
+  const tu = await getTranslations("upgrade");
   const loc = locale === "tr" ? "tr" : "en";
 
   const filters = parseSearchParams(sp);
   const page = Math.max(1, Number(typeof sp.page === "string" ? sp.page : "1") || 1);
 
+  // Plan gating: free users get a daily search cap and a limited archive window.
+  const user = await getCurrentUser();
+  let overSearchQuota = false;
+  if (user) {
+    const ent = await entitlementsForUser(user.id);
+    if (ent.archiveDays !== null) filters.publishedWithinDays = ent.archiveDays;
+    const quota = await consumeQuota(user.id, "search", ent);
+    overSearchQuota = !quota.allowed;
+  }
+
   let result: Awaited<ReturnType<typeof searchTenders>> | null = null;
   let searchError = false;
-  try {
-    result = await searchTenders(filters, page);
-  } catch {
-    searchError = true;
+  if (!overSearchQuota) {
+    try {
+      result = await searchTenders(filters, page);
+    } catch {
+      searchError = true;
+    }
   }
 
   return (
@@ -63,6 +80,14 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
         </Suspense>
 
         <div className="min-w-0 flex-1">
+          {overSearchQuota ? (
+            <UpgradePrompt
+              title={tu("searchLimitTitle")}
+              description={tu("searchLimitHint")}
+              ctaLabel={tu("cta")}
+            />
+          ) : (
+          <>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-neutral-500">
               {searchError
@@ -131,6 +156,8 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
                 </Button>
               )}
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

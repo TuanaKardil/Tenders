@@ -159,5 +159,12 @@
     "title": "Tenders worldwide",
     "subtitle": "Click a country to see its open tenders.",
     "viewAll": "View all in search"
+  },
+  "upgrade": {
+    "searchLimitTitle": "Daily search limit reached",
+    "searchLimitHint": "The Free plan includes 10 searches per day. Upgrade for unlimited search and full archive access.",
+    "clickLimitTitle": "Monthly link limit reached",
+    "clickLimitHint": "The Free plan includes 5 original-source clicks per month. Upgrade for unlimited access.",
+    "cta": "See plans"
   }
 }
