@@ -83,15 +83,15 @@ Yapılanlar:
 - E-posta: `quota-hit.tsx` + `trial-payment-issue.tsx` template + email-dispatch renderer.
 - Test: `quota.test.ts`, Paddle webhook unit testi, `entitlements.test.ts` genişletme.
 
-## Faz 1e — Cila/launch (kod, outline)
+## Faz 1e — Cila/launch (kod, devam ediyor)
 
-- SEO: `sitemap.ts`, `robots.ts`, `metadataBase` + hreflang, JSON-LD (Organization/WebSite+SearchAction/BreadcrumbList/FAQPage — **asla JobPosting**).
-- OG: `tenders/[slug]/opengraph-image.tsx` (`next/og`).
-- Programatik SEO: `/countries/[country]`, `/sectors/[sector]` (veri+özgün metin varken publish).
-- Legal + blog: `/terms`, `/privacy`, `/takedown`, `/blog` (MDX iskelet).
-- Gözlemlenebilirlik: Sentry (`instrumentation.ts`, web+worker), PostHog provider + funnel event'leri.
-- Boş/yükleniyor: eksik `loading.tsx`, kök `not-found.tsx` + `error.tsx`.
-- Kalite: Lighthouse mobil >85, Playwright smoke (signup→onboarding→alert→search→detail→redirect).
+- ✅ **SEO:** `sitemap.ts` (statik + yayında tenders), `robots.ts`, `metadataBase` + hreflang/canonical, JSON-LD (Organization/WebSite+SearchAction landing, BreadcrumbList detay — **JobPosting yok**). Tarayıcıda doğrulandı.
+- ✅ **OG:** site geneli varsayılan + `tenders/[slug]/opengraph-image.tsx` (`next/og`); intl middleware'den hariç tutuldu. Görsel doğrulandı.
+- ✅ **Legal + footer:** `/terms`, `/privacy`, `/takedown` (taslak içerik, açıkça işaretli) + keşif için footer. Blog ⏳.
+- ✅ **Boş/hata:** `[locale]/not-found.tsx`, `error.tsx`, kök `global-error.tsx` (i18n). Ek `loading.tsx`'ler ⏳.
+- ⏳ **Programatik SEO:** `/countries/[country]`, `/sectors/[sector]` (dinamik stat + liste + FAQPage schema). Yüksek SEO değeri, veri hazır.
+- ⏳ **Gözlemlenebilirlik:** Sentry (`instrumentation.ts`, web+worker), PostHog provider + funnel event'leri (env gelince aktive olur).
+- ⏳ **Blog** (MDX iskelet) · **Playwright smoke** · Lighthouse mobil >85.
 
 ---
 
