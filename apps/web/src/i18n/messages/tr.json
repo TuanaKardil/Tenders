@@ -45,11 +45,81 @@
       "country": "Ülke",
       "sector": "Sektör",
       "source": "Kaynak"
+    },
+    "saveSearch": {
+      "button": "Aramayı kaydet",
+      "title": "Bu aramayı uyarı olarak kaydet",
+      "namePlaceholder": "Aramaya bir isim verin",
+      "save": "Kaydet ve haftalık uyarıyı aç",
+      "saved": "Kaydedildi! Yeni ihaleler eşleştiğinde e-posta göndereceğiz.",
+      "goToAlerts": "Uyarıları yönet"
+    }
+  },
+  "onboarding": {
+    "title": "İlk uyarınızı 3 dakikada kurun",
+    "subtitle": "Ne aradığınızı söyleyin — tüm kaynakları sizin için izleyelim.",
+    "steps": { "sectors": "Sektörler", "countries": "Ülkeler", "keywords": "Anahtar kelimeler" },
+    "hints": {
+      "sectors": "Çalıştığınız sektörleri seçin.",
+      "countries": "Teklif verebileceğiniz ülkeleri seçin.",
+      "keywords": "İsterseniz virgülle ayırarak anahtar kelimeler ekleyin."
+    },
+    "keywordsPlaceholder": "örn. güneş enerjisi, sondaj, danışmanlık",
+    "back": "Geri",
+    "next": "İleri",
+    "finish": "Uyarımı oluştur",
+    "error": "Bir şeyler ters gitti. Lütfen tekrar deneyin."
+  },
+  "alerts": {
+    "title": "Uyarılar",
+    "usage": "{max} uyarıdan {used} tanesi kullanımda",
+    "newFromSearch": "Aramadan yeni uyarı",
+    "signInRequired": "Uyarılarınızı yönetmek için giriş yapın.",
+    "newResults": "yeni",
+    "delete": "Sil",
+    "frequency": { "instant": "Anında", "daily": "Günlük", "weekly": "Haftalık" },
+    "empty": {
+      "title": "Henüz uyarı yok",
+      "hint": "İlk uyarınızı oluşturun, eşleşen ihaleleri e-posta ile gönderelim.",
+      "cta": "İlk uyarınızı kurun"
+    }
+  },
+  "dashboard": {
+    "greeting": "Tekrar hoş geldiniz{name, select, other { {name}}}",
+    "signInRequired": "Panelinizi görmek için giriş yapın.",
+    "matchFeed": "“{name}” için eşleşmeler",
+    "manageAlerts": "Uyarıları yönet",
+    "savedSearches": "Kayıtlı aramalar",
+    "noSearches": "Henüz kayıtlı arama yok",
+    "closingSoon": "Yakında kapanacaklar",
+    "viewWatchlist": "Takip listesini gör",
+    "emptyWatchlist": "Takip listenizde henüz bir şey yok.",
+    "emptyFeed": "Kayıtlı aramanız için şu anda eşleşme yok.",
+    "browse": "İhalelere göz at",
+    "setupCta": "İlk uyarınızı kurun"
+  },
+  "watchlist": {
+    "title": "Takip listesi",
+    "signInRequired": "Takip listenizi görmek için giriş yapın.",
+    "icsExport": "Takvime aktar",
+    "save": "Kaydet",
+    "remove": "Kaldır",
+    "columns": {
+      "tender": "İhale",
+      "country": "Ülke",
+      "value": "Tahmini bedel",
+      "closing": "Son tarih"
+    },
+    "empty": {
+      "title": "Takip listeniz boş",
+      "hint": "İlgilendiğiniz ihaleleri kaydedin, son tarihlerini buradan izleyin.",
+      "cta": "İhalelere göz at"
     }
   },
   "tender": {
     "goToSource": "Orijinal ilana git",
     "save": "Kaydet",
+    "savedLabel": "Kaydedildi",
     "share": "Paylaş",
     "setAlert": "Uyarı kur",
     "summaryTitle": "Yapay zeka özeti",

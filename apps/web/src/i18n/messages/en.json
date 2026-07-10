@@ -45,11 +45,81 @@
       "country": "Country",
       "sector": "Sector",
       "source": "Source"
+    },
+    "saveSearch": {
+      "button": "Save search",
+      "title": "Save this search as an alert",
+      "namePlaceholder": "Name this search",
+      "save": "Save & enable weekly alert",
+      "saved": "Saved! We'll email you when new tenders match.",
+      "goToAlerts": "Manage alerts"
+    }
+  },
+  "onboarding": {
+    "title": "Set up your first alert in 3 minutes",
+    "subtitle": "Tell us what you're looking for — we'll watch every source for you.",
+    "steps": { "sectors": "Sectors", "countries": "Countries", "keywords": "Keywords" },
+    "hints": {
+      "sectors": "Pick the sectors you work in.",
+      "countries": "Pick the countries you can bid in.",
+      "keywords": "Optionally add keywords, separated by commas."
+    },
+    "keywordsPlaceholder": "e.g. solar, boreholes, consultancy",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Create my alert",
+    "error": "Something went wrong. Please try again."
+  },
+  "alerts": {
+    "title": "Alerts",
+    "usage": "{used} of {max} alerts in use",
+    "newFromSearch": "New alert from search",
+    "signInRequired": "Sign in to manage your alerts.",
+    "newResults": "new",
+    "delete": "Delete",
+    "frequency": { "instant": "Instant", "daily": "Daily", "weekly": "Weekly" },
+    "empty": {
+      "title": "No alerts yet",
+      "hint": "Create your first alert and we'll email you matching tenders.",
+      "cta": "Set up your first alert"
+    }
+  },
+  "dashboard": {
+    "greeting": "Welcome back{name, select, other { {name}}}",
+    "signInRequired": "Sign in to see your dashboard.",
+    "matchFeed": "Matches for “{name}”",
+    "manageAlerts": "Manage alerts",
+    "savedSearches": "Saved searches",
+    "noSearches": "No saved searches yet",
+    "closingSoon": "Closing soon",
+    "viewWatchlist": "View watchlist",
+    "emptyWatchlist": "Nothing on your watchlist yet.",
+    "emptyFeed": "No current matches for your saved search.",
+    "browse": "Browse tenders",
+    "setupCta": "Set up your first alert"
+  },
+  "watchlist": {
+    "title": "Watchlist",
+    "signInRequired": "Sign in to see your watchlist.",
+    "icsExport": "Export to calendar",
+    "save": "Save",
+    "remove": "Remove",
+    "columns": {
+      "tender": "Tender",
+      "country": "Country",
+      "value": "Est. value",
+      "closing": "Closing"
+    },
+    "empty": {
+      "title": "Your watchlist is empty",
+      "hint": "Save tenders you're interested in and track their deadlines here.",
+      "cta": "Browse tenders"
     }
   },
   "tender": {
     "goToSource": "Go to original notice",
     "save": "Save",
+    "savedLabel": "Saved",
     "share": "Share",
     "setAlert": "Set alert",
     "summaryTitle": "AI summary",

@@ -7,6 +7,7 @@ import { searchTenders } from "@/lib/meilisearch";
 import { SearchBar } from "@/components/search/search-bar";
 import { FacetSidebar } from "@/components/search/facet-sidebar";
 import { FilterChips } from "@/components/search/filter-chips";
+import { SaveSearchButton } from "@/components/search/save-search-button";
 import { TenderCard } from "@/components/tenders/tender-card";
 import { Button } from "@/components/ui/button";
 
@@ -68,9 +69,23 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
                 ? t("unavailable")
                 : t("resultCount", { count: result?.totalHits ?? 0 })}
             </p>
-            <Suspense>
-              <FilterChips locale={loc} clearLabel={t("clearAll")} />
-            </Suspense>
+            <div className="flex items-center gap-3">
+              <Suspense>
+                <FilterChips locale={loc} clearLabel={t("clearAll")} />
+              </Suspense>
+              <Suspense>
+                <SaveSearchButton
+                  labels={{
+                    button: t("saveSearch.button"),
+                    title: t("saveSearch.title"),
+                    namePlaceholder: t("saveSearch.namePlaceholder"),
+                    save: t("saveSearch.save"),
+                    saved: t("saveSearch.saved"),
+                    goToAlerts: t("saveSearch.goToAlerts"),
+                  }}
+                />
+              </Suspense>
+            </div>
           </div>
 
           {searchError && (

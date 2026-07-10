@@ -1,5 +1,10 @@
 import { Queue } from "bullmq";
-import { QUEUES, type IndexSyncJob, type QueueName } from "@repo/config";
+import {
+  QUEUES,
+  type EmailDispatchJob,
+  type IndexSyncJob,
+  type QueueName,
+} from "@repo/config";
 import { connection } from "./connection";
 
 const registry = new Map<QueueName, Queue>();
@@ -25,5 +30,12 @@ export async function enqueueIndexSync(job: IndexSyncJob) {
   await getQueue(QUEUES.indexSync).add("index-sync", job, {
     attempts: 5,
     backoff: { type: "exponential", delay: 10_000 },
+  });
+}
+
+export async function enqueueEmailDispatch(job: EmailDispatchJob) {
+  await getQueue(QUEUES.emailDispatch).add("email", job, {
+    attempts: 5,
+    backoff: { type: "exponential", delay: 60_000 },
   });
 }

@@ -8,6 +8,7 @@ import { db, tenders, sources, documents as documentsTable } from "@repo/db";
 import { similarTenders } from "@/lib/meilisearch";
 import { TenderCard } from "@/components/tenders/tender-card";
 import { DeadlineChip } from "@/components/tenders/deadline-chip";
+import { WatchlistButton } from "@/components/tenders/watchlist-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -137,12 +138,12 @@ export default async function TenderPage({ params }: TenderPageProps) {
           {t("goToSource")}
           <ExternalLinkIcon className="ml-1.5 size-4" />
         </Button>
-        <Button variant="outline" size="lg" disabled title="Coming soon">
-          {t("save")}
-        </Button>
-        <Button variant="outline" size="lg" disabled title="Coming soon">
-          {t("setAlert")}
-        </Button>
+        {/* Page is ISR-cached, so saved-state starts false; add is idempotent. */}
+        <WatchlistButton
+          tenderId={tender.id}
+          initialSaved={false}
+          labels={{ save: t("save"), saved: t("savedLabel") }}
+        />
       </div>
 
       {/* AI summary */}

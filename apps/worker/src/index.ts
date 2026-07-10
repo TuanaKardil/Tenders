@@ -1,7 +1,21 @@
 import { startNormalizeWorker } from "./workers/normalize";
 import { startIndexSyncWorker } from "./workers/index-sync";
+import { startAlertWorkers } from "./workers/alerts";
+import { startEmailDispatchWorker } from "./workers/email-dispatch";
+import { startStatusRefreshWorker } from "./workers/status-refresh";
+import { registerSchedules } from "./schedules";
 
-const workers = [startNormalizeWorker(), startIndexSyncWorker()];
+const workers = [
+  startNormalizeWorker(),
+  startIndexSyncWorker(),
+  ...startAlertWorkers(),
+  startEmailDispatchWorker(),
+  startStatusRefreshWorker(),
+];
+
+registerSchedules().catch((err) => {
+  console.error("failed to register schedules:", err);
+});
 
 for (const worker of workers) {
   worker.on("completed", (job) => {

@@ -5,6 +5,7 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { ClerkProvider } from "@clerk/nextjs";
 import { routing } from "@/i18n/routing";
+import { SiteHeader } from "@/components/layout/site-header";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -47,7 +48,10 @@ export default async function LocaleLayout({
     <ClerkProvider>
       <html lang={locale}>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          <NextIntlClientProvider>
+            <SiteHeader />
+            {children}
+          </NextIntlClientProvider>
         </body>
       </html>
     </ClerkProvider>

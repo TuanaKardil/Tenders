@@ -37,6 +37,12 @@ export interface EmailDispatchJob {
   to: string;
   locale: "en" | "tr";
   props: Record<string, unknown>;
-  /** For alert emails: record delivery against this saved search. */
+  /** For alert emails: record an alert_deliveries row against this saved search. */
   savedSearchId?: string;
+  userId?: string;
+  tenderIds?: string[];
+}
+
+export interface AlertBatchJob {
+  frequency: "instant" | "daily" | "weekly";
 }

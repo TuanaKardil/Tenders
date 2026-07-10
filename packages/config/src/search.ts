@@ -100,6 +100,8 @@ export interface SearchFilters {
   closingBefore?: string;
   /** Restrict archive depth: published within the last N days. */
   publishedWithinDays?: number;
+  /** Alert matching: only tenders published after this unix timestamp. */
+  publishedAfterUnix?: number;
   language?: string;
 }
 
@@ -135,6 +137,9 @@ export function buildMeiliFilter(
   if (filters.publishedWithinDays !== undefined) {
     const cutoff = Math.floor(now.getTime() / 1000) - filters.publishedWithinDays * 86_400;
     parts.push(`published_at >= ${cutoff}`);
+  }
+  if (filters.publishedAfterUnix !== undefined) {
+    parts.push(`published_at > ${filters.publishedAfterUnix}`);
   }
 
   return parts.length > 0 ? parts.join(" AND ") : undefined;
