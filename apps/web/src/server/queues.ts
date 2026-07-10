@@ -1,6 +1,11 @@
 import { Queue } from "bullmq";
 import { Redis } from "ioredis";
-import { QUEUES, type NormalizeJob, type QueueName } from "@repo/config";
+import {
+  QUEUES,
+  type NormalizeJob,
+  type EmailDispatchJob,
+  type QueueName,
+} from "@repo/config";
 
 /**
  * Enqueue-only BullMQ clients for the web app.
@@ -40,4 +45,9 @@ export async function enqueueNormalize(jobs: NormalizeJob[]) {
   await queue.addBulk(
     jobs.map((data) => ({ name: "normalize", data }))
   );
+}
+
+export async function enqueueEmail(job: EmailDispatchJob) {
+  const queue = getQueue(QUEUES.emailDispatch);
+  await queue.add("email", job);
 }

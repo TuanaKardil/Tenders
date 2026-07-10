@@ -22,7 +22,7 @@ Anthropic · PostHog + Sentry · Vercel (web) + Railway (worker).
 | **1b** | `/search` (Meili+facet), `/tenders/[slug]`, `/go/[id]` izlenen yönlendirme, `/map`, landing | ✅ commit'li |
 | **1c** | `/onboarding`, saved-searches, alert motoru (instant/daily/weekly), digest e-posta, `/dashboard`, `/watchlist`+ICS | ✅ commit'li |
 | **Kurulum** | Servisleri gerçek hesaplarla bağla, mevcut özellikleri uçtan uca doğrula | 🔧 **devam ediyor** (aşağıda) |
-| **1d** | Gelir: `/pricing`, Paddle checkout+webhook, Redis metered kotalar, entitlement uygulaması, quota-hit/trial e-posta | ⏳ |
+| **1d** | Gelir: `/pricing`, Paddle checkout+webhook, Redis metered kotalar, quota-hit/trial e-posta | ✅ kod (Paddle hesabı + env bekliyor) |
 | **1e** | Cila/launch: SEO (sitemap/robots/hreflang/JSON-LD/OG), Sentry+PostHog, legal, `/countries`·`/sectors`·`/blog`, not-found/error | ⏳ |
 
 Hazır ama henüz bağlanmamış altyapı: entitlements config (free/starter/pro tüm kotalar,
@@ -64,7 +64,11 @@ Sonraya (fazlarla gelir): MapTiler (harita tile), Paddle (1d), PostHog + Sentry 
 
 ---
 
-## Faz 1d — Gelir (kod)
+## Faz 1d — Gelir (kod ✅ bitti, Paddle hesabı bekliyor)
+
+Kod tamam ve doğrulandı (typecheck/lint/test yeşil, sayfalar tarayıcıda gezildi). **Aktive olması için senin Paddle sandbox kurulumun gerekli** (KURULUM.md Faz 1d): sandbox hesabı → `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `NEXT_PUBLIC_PADDLE_ENV`; Catalog'da Starter/Pro ürünleri → 4 price ID (`NEXT_PUBLIC_PADDLE_PRICE_*`); deploy sonrası webhook → `/api/webhooks/paddle`. Env gelince checkout butonları ve abonelik→plan akışı otomatik çalışır.
+
+Yapılanlar:
 
 - Yeni dep: `@paddle/paddle-node-sdk`, `@paddle/paddle-js`.
 - `packages/config/src/pricing.ts` — Starter $19/ay·$190/yıl, Pro $59/ay·$590/yıl; 4 price ID env'den.

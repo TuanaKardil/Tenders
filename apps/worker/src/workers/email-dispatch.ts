@@ -6,6 +6,8 @@ import { db, alertDeliveries } from "@repo/db";
 import { QUEUES, type EmailDispatchJob } from "@repo/config";
 import WelcomeEmail from "@repo/emails/welcome";
 import AlertDigestEmail, { type AlertDigestProps } from "@repo/emails/alert-digest";
+import QuotaHitEmail from "@repo/emails/quota-hit";
+import TrialPaymentIssueEmail from "@repo/emails/trial-payment-issue";
 import { connection } from "../connection";
 
 const FROM = process.env.EMAIL_FROM ?? "Tenderlist <alerts@tenderlist.app>";
@@ -33,6 +35,10 @@ function renderTemplate(job: EmailDispatchJob): Promise<string> {
           ...(job.props as unknown as AlertDigestProps),
         })
       );
+    case "quota-hit":
+      return render(createElement(QuotaHitEmail, { ...common, ...job.props }));
+    case "trial-payment-issue":
+      return render(createElement(TrialPaymentIssueEmail, { ...common, ...job.props }));
     default:
       throw new Error(`no renderer for template ${job.template}`);
   }
