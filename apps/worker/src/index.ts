@@ -1,6 +1,7 @@
 import { startNormalizeWorker } from "./workers/normalize";
+import { startIndexSyncWorker } from "./workers/index-sync";
 
-const workers = [startNormalizeWorker()];
+const workers = [startNormalizeWorker(), startIndexSyncWorker()];
 
 for (const worker of workers) {
   worker.on("completed", (job) => {

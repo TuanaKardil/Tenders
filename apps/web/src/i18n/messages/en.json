@@ -12,7 +12,11 @@
     "heroSubtitle": "We aggregate public and private procurement notices across Africa, translate and summarize them, and alert you the moment something relevant appears.",
     "searchPlaceholder": "Search tenders — e.g. solar, road construction, medical supplies",
     "ctaPrimary": "Set up your first alert",
-    "ctaSecondary": "Browse tenders"
+    "ctaSecondary": "Browse tenders",
+    "statsTenders": "live tenders",
+    "statsCountries": "countries",
+    "statsSources": "official sources",
+    "latestTitle": "Latest opportunities"
   },
   "nav": {
     "search": "Search",
@@ -21,5 +25,69 @@
     "dashboard": "Dashboard",
     "watchlist": "Watchlist",
     "alerts": "Alerts"
+  },
+  "search": {
+    "placeholder": "Search tenders — e.g. solar, road construction, medical supplies",
+    "button": "Search",
+    "resultCount": "{count, plural, =0 {No tenders} one {# tender} other {# tenders}} found",
+    "clearAll": "Clear all",
+    "prev": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {total}",
+    "unavailable": "Search is temporarily unavailable",
+    "unavailableHint": "The search service is not reachable right now. Please try again in a moment.",
+    "empty": {
+      "title": "No tenders match your filters",
+      "hint": "Try removing a filter or using a broader keyword."
+    },
+    "facets": {
+      "status": "Status",
+      "country": "Country",
+      "sector": "Sector",
+      "source": "Source"
+    }
+  },
+  "tender": {
+    "goToSource": "Go to original notice",
+    "save": "Save",
+    "share": "Share",
+    "setAlert": "Set alert",
+    "summaryTitle": "AI summary",
+    "summaryDisclaimer": "Generated summary — always verify against the original notice.",
+    "keyFacts": "Key facts",
+    "buyer": "Buyer",
+    "funder": "Funder",
+    "location": "Location",
+    "sector": "Sector",
+    "noticeType": "Notice type",
+    "method": "Procurement method",
+    "published": "Published",
+    "closing": "Closing",
+    "questionDeadline": "Questions by",
+    "estimatedValue": "Estimated value",
+    "eligibility": "Eligibility",
+    "eligibilityOpen": "No eligibility restrictions were extracted for this tender. Check the original notice for details.",
+    "howToApply": "How to apply",
+    "applySteps": {
+      "one": "Read the original notice carefully, including all annexes.",
+      "two": "Confirm your company meets the eligibility requirements.",
+      "three": "Prepare the required documents before the question deadline.",
+      "four": "Submit questions to the buyer if anything is unclear.",
+      "five": "Submit your bid through the channel stated in the notice — before the deadline."
+    },
+    "documents": "Documents",
+    "documentsNote": "Documents open on the source's website. We never host tender documents.",
+    "sourceTrust": "Source",
+    "sourceTrustNote": "This notice was aggregated from the official source below. Always rely on the original for binding information.",
+    "lastSynced": "Last synced",
+    "viewOriginal": "View original notice",
+    "similar": "Similar tenders",
+    "timeline": "Timeline",
+    "notFound": "Tender not found"
+  },
+  "map": {
+    "title": "Tenders across Africa",
+    "subtitle": "Click a country to see its open tenders.",
+    "viewAll": "View all in search"
   }
 }

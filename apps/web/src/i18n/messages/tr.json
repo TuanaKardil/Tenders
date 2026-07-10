@@ -12,7 +12,11 @@
     "heroSubtitle": "Afrika genelindeki kamu ve özel sektör ihale ilanlarını topluyor, çevirip özetliyor ve ilgili bir fırsat çıktığı anda size haber veriyoruz.",
     "searchPlaceholder": "İhale arayın — örn. güneş enerjisi, yol yapımı, tıbbi malzeme",
     "ctaPrimary": "İlk uyarınızı kurun",
-    "ctaSecondary": "İhalelere göz atın"
+    "ctaSecondary": "İhalelere göz atın",
+    "statsTenders": "aktif ihale",
+    "statsCountries": "ülke",
+    "statsSources": "resmi kaynak",
+    "latestTitle": "Son fırsatlar"
   },
   "nav": {
     "search": "Ara",
@@ -21,5 +25,69 @@
     "dashboard": "Panel",
     "watchlist": "Takip listesi",
     "alerts": "Uyarılar"
+  },
+  "search": {
+    "placeholder": "İhale arayın — örn. güneş enerjisi, yol yapımı, tıbbi malzeme",
+    "button": "Ara",
+    "resultCount": "{count, plural, =0 {İhale bulunamadı} one {# ihale bulundu} other {# ihale bulundu}}",
+    "clearAll": "Tümünü temizle",
+    "prev": "Önceki",
+    "next": "Sonraki",
+    "pageOf": "Sayfa {page} / {total}",
+    "unavailable": "Arama geçici olarak kullanılamıyor",
+    "unavailableHint": "Arama servisine şu anda ulaşılamıyor. Lütfen birazdan tekrar deneyin.",
+    "empty": {
+      "title": "Filtrelerinize uyan ihale yok",
+      "hint": "Bir filtreyi kaldırmayı veya daha genel bir anahtar kelime kullanmayı deneyin."
+    },
+    "facets": {
+      "status": "Durum",
+      "country": "Ülke",
+      "sector": "Sektör",
+      "source": "Kaynak"
+    }
+  },
+  "tender": {
+    "goToSource": "Orijinal ilana git",
+    "save": "Kaydet",
+    "share": "Paylaş",
+    "setAlert": "Uyarı kur",
+    "summaryTitle": "Yapay zeka özeti",
+    "summaryDisclaimer": "Otomatik oluşturulmuş özet — her zaman orijinal ilanla doğrulayın.",
+    "keyFacts": "Temel bilgiler",
+    "buyer": "Alıcı kurum",
+    "funder": "Finansman",
+    "location": "Konum",
+    "sector": "Sektör",
+    "noticeType": "İlan türü",
+    "method": "İhale usulü",
+    "published": "Yayın tarihi",
+    "closing": "Son teklif tarihi",
+    "questionDeadline": "Soru son tarihi",
+    "estimatedValue": "Tahmini bedel",
+    "eligibility": "Uygunluk",
+    "eligibilityOpen": "Bu ihale için uygunluk kısıtlaması tespit edilmedi. Ayrıntılar için orijinal ilana bakın.",
+    "howToApply": "Nasıl başvurulur",
+    "applySteps": {
+      "one": "Orijinal ilanı tüm ekleriyle birlikte dikkatlice okuyun.",
+      "two": "Şirketinizin uygunluk şartlarını karşıladığından emin olun.",
+      "three": "Gerekli belgeleri soru son tarihinden önce hazırlayın.",
+      "four": "Belirsiz noktalar varsa alıcı kuruma soru iletin.",
+      "five": "Teklifinizi ilanda belirtilen kanaldan, son tarihten önce gönderin."
+    },
+    "documents": "Belgeler",
+    "documentsNote": "Belgeler kaynağın web sitesinde açılır. İhale belgelerini asla barındırmayız.",
+    "sourceTrust": "Kaynak",
+    "sourceTrustNote": "Bu ilan aşağıdaki resmi kaynaktan derlenmiştir. Bağlayıcı bilgiler için her zaman orijinali esas alın.",
+    "lastSynced": "Son eşitleme",
+    "viewOriginal": "Orijinal ilanı görüntüle",
+    "similar": "Benzer ihaleler",
+    "timeline": "Zaman çizelgesi",
+    "notFound": "İhale bulunamadı"
+  },
+  "map": {
+    "title": "Afrika genelinde ihaleler",
+    "subtitle": "Açık ihalelerini görmek için bir ülkeye tıklayın.",
+    "viewAll": "Tümünü aramada gör"
   }
 }

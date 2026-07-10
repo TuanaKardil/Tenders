@@ -3,7 +3,9 @@ import { and, eq } from "drizzle-orm";
 import { db, rawNotices, tenders } from "@repo/db";
 import { QUEUES, type NormalizeJob, ingestNoticeSchema } from "@repo/config";
 import { connection } from "../connection";
+import { enqueueIndexSync } from "../queues";
 import {
+  coalesceUpdate,
   computeSourceHash,
   extractionConfidence,
   qualityScore,
@@ -44,7 +46,12 @@ export async function processNormalizeJob(job: Job<NormalizeJob>) {
   const now = new Date();
 
   const [existing] = await db
-    .select({ id: tenders.id, sourceHash: tenders.sourceHash })
+    .select({
+      id: tenders.id,
+      sourceHash: tenders.sourceHash,
+      closingAt: tenders.closingAt,
+      extractionConfidence: tenders.extractionConfidence,
+    })
     .from(tenders)
     .where(
       and(
@@ -94,7 +101,26 @@ export async function processNormalizeJob(job: Job<NormalizeJob>) {
       await db.update(tenders).set({ lastSeenAt: now }).where(eq(tenders.id, tenderId));
       outcome = "unchanged";
     } else {
-      await db.update(tenders).set(fieldValues).where(eq(tenders.id, tenderId));
+      // A degraded re-scrape must not clobber good data: nulls/empty arrays
+      // are dropped, confidence only moves up, and status uses the effective
+      // (incoming or existing) closing date.
+      const merged = coalesceUpdate(fieldValues, [
+        "sourceUrl",
+        "sourceHash",
+        "titleOriginal",
+        "lastSeenAt",
+        "updatedAt",
+        "status",
+      ]);
+      merged.status = statusFromClosingAt(
+        toDate(data.closing_at) ?? existing.closingAt,
+        now
+      );
+      merged.extractionConfidence = Math.max(
+        confidence,
+        existing.extractionConfidence ?? 0
+      );
+      await db.update(tenders).set(merged).where(eq(tenders.id, tenderId));
       outcome = "updated";
     }
   } else {
@@ -123,7 +149,12 @@ export async function processNormalizeJob(job: Job<NormalizeJob>) {
     .set({ status: outcome === "unchanged" ? "duplicate" : "normalized", tenderId })
     .where(eq(rawNotices.id, rawNoticeId));
 
-  // TODO(phase 1b): enqueue index-sync + extract/translate jobs here.
+  if (outcome !== "unchanged") {
+    // Upserts published docs / removes unpublished ones from Meilisearch.
+    await enqueueIndexSync({ tenderIds: [tenderId] });
+  }
+
+  // TODO(phase 1b+): chain extract/translate jobs for low-confidence and non-EN notices.
   return { outcome, tenderId };
 }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { IngestNotice } from "@repo/config/ingest";
 import {
+  coalesceUpdate,
   computeSourceHash,
   extractionConfidence,
   qualityScore,
@@ -101,5 +102,25 @@ describe("toDate", () => {
     );
     expect(toDate("not-a-date")).toBeNull();
     expect(toDate(undefined)).toBeNull();
+  });
+});
+
+describe("coalesceUpdate", () => {
+  it("drops nulls and empty arrays so existing data wins", () => {
+    const merged = coalesceUpdate(
+      { closingAt: null, buyerNameRaw: null, keywords: [], sourceHash: "abc", titleOriginal: "t" },
+      ["sourceHash", "titleOriginal"]
+    );
+    expect(merged).toEqual({ sourceHash: "abc", titleOriginal: "t" });
+  });
+
+  it("keeps non-empty incoming values", () => {
+    const merged = coalesceUpdate(
+      { closingAt: new Date("2026-08-01"), keywords: ["solar"], city: null },
+      []
+    );
+    expect(merged.closingAt).toBeInstanceOf(Date);
+    expect(merged.keywords).toEqual(["solar"]);
+    expect("city" in merged).toBe(false);
   });
 });

@@ -8,7 +8,8 @@
     "./entitlements": "./src/entitlements.ts",
     "./constants": "./src/constants.ts",
     "./queues": "./src/queues.ts",
-    "./ingest": "./src/ingest.ts"
+    "./ingest": "./src/ingest.ts",
+    "./search": "./src/search.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -78,3 +78,23 @@ export function toDate(value: string | undefined): Date | null {
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
 }
+
+/**
+ * Update merge policy: a re-scrape must never degrade an existing tender.
+ * Drops null values and empty arrays from the update so existing data wins,
+ * while pass-through fields (hash, timestamps, status, …) always apply.
+ */
+export function coalesceUpdate<T extends Record<string, unknown>>(
+  values: T,
+  alwaysApply: (keyof T)[]
+): Partial<T> {
+  const result: Partial<T> = {};
+  for (const [key, value] of Object.entries(values) as [keyof T, T[keyof T]][]) {
+    const isEmpty =
+      value === null || value === undefined || (Array.isArray(value) && value.length === 0);
+    if (!isEmpty || alwaysApply.includes(key)) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
