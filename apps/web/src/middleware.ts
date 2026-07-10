@@ -26,7 +26,8 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    // Skip Next internals, static files, and all /api routes (they handle auth themselves)
-    "/((?!api|go|_next|_vercel|.*\\..*).*)",
+    // Skip Next internals, static files, /api, and metadata image routes
+    // (opengraph/twitter/icon), which must not be locale-redirected.
+    "/((?!api|go|_next|_vercel|.*opengraph-image|.*twitter-image|.*icon|.*\\..*).*)",
   ],
 };
