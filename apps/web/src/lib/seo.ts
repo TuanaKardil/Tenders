@@ -75,6 +75,25 @@ export function breadcrumbLd(items: { name: string; url: string }[]) {
   };
 }
 
+export function articleLd(article: {
+  title: string;
+  description: string;
+  url: string;
+  datePublished: string;
+  author: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.description,
+    url: article.url,
+    datePublished: article.datePublished,
+    author: { "@type": "Organization", name: article.author },
+    publisher: { "@type": "Organization", name: SITE_NAME },
+  };
+}
+
 export function faqLd(items: { question: string; answer: string }[]) {
   return {
     "@context": "https://schema.org",
