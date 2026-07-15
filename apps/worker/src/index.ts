@@ -1,3 +1,4 @@
+import { Sentry } from "./sentry";
 import { startNormalizeWorker } from "./workers/normalize";
 import { startIndexSyncWorker } from "./workers/index-sync";
 import { startAlertWorkers } from "./workers/alerts";
@@ -23,8 +24,14 @@ for (const worker of workers) {
   });
   worker.on("failed", (job, err) => {
     console.error(`[${worker.name}] job ${job?.id} failed:`, err.message);
+    Sentry.captureException(err, { extra: { worker: worker.name, jobId: job?.id } });
   });
 }
+
+process.on("unhandledRejection", (reason) => {
+  console.error("unhandledRejection:", reason);
+  Sentry.captureException(reason);
+});
 
 console.log(
   `worker started — queues: ${workers.map((w) => w.name).join(", ")}`

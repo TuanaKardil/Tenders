@@ -8,7 +8,9 @@ overrides:
 allowBuilds:
   '@clerk/shared': true
   '@parcel/watcher': true
+  '@sentry/cli': false
   '@swc/core': true
+  core-js: false
   esbuild: true
   msgpackr-extract: true
   sharp: true

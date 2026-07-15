@@ -7,6 +7,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { routing } from "@/i18n/routing";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { PostHogProvider } from "@/components/analytics/posthog-provider";
 import { SITE_URL, SITE_NAME } from "@/lib/seo";
 import "../globals.css";
 
@@ -61,9 +62,11 @@ export default async function LocaleLayout({
       <html lang={locale}>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           <NextIntlClientProvider>
-            <SiteHeader />
-            {children}
-            <SiteFooter />
+            <PostHogProvider>
+              <SiteHeader />
+              {children}
+              <SiteFooter />
+            </PostHogProvider>
           </NextIntlClientProvider>
         </body>
       </html>
