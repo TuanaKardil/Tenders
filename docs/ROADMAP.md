@@ -41,6 +41,7 @@ Detay + doğrulama komutları [`docs/KURULUM.md`](./KURULUM.md)'de. Gizli anahta
 - [x] **Supabase** — DATABASE_URL/DIRECT_URL girili (şifre var)
 - [x] **Supabase** — bağlantı doğrulandı; migrate uygulandı; seed çalıştı (377 sahte ihale, 225 yayında — bilinçli olarak korundu)
 - [x] **Upstash Redis** — `REDIS_URL` bağlı; worker ayağa kalkıyor, 5 schedule kayıtlı
+  - ⚠️ **Upstash ücretsiz kotası (500K komut/ay) tükendi** — BullMQ + zamanlanmış görevler Redis'i sürekli yoklar; dev'de sürekli açık worker kotayı hızla yer. Seçenekler: (a) dev için lokal Redis (`redis-server`) kullan, Upstash'ı sadece deploy'a sakla — orijinal tasarım buydu; (b) Upstash'ı pay-as-you-go'ya yükselt; (c) aylık sıfırlanmayı bekle. Arama/gezinme etkilenmez (Meili); sadece kuyruk/kota Redis'e bağlı.
 - [x] **Meilisearch Cloud** — host+key'ler bağlı; reindex yapıldı (225 doc); `/search` gerçek veriyle HTTP 200
 - [x] **Clerk** — `pk_/sk_` bağlı (web-only); webhook yerine `getCurrentUser` lazy-provision eklendi (lokal için)
 - [ ] **Anthropic** — `ANTHROPIC_API_KEY` → AI özet/extraction (🟡 sonra, seed özetleri hazır)
@@ -87,11 +88,13 @@ Yapılanlar:
 
 - ✅ **SEO:** `sitemap.ts` (statik + yayında tenders), `robots.ts`, `metadataBase` + hreflang/canonical, JSON-LD (Organization/WebSite+SearchAction landing, BreadcrumbList detay — **JobPosting yok**). Tarayıcıda doğrulandı.
 - ✅ **OG:** site geneli varsayılan + `tenders/[slug]/opengraph-image.tsx` (`next/og`); intl middleware'den hariç tutuldu. Görsel doğrulandı.
-- ✅ **Legal + footer:** `/terms`, `/privacy`, `/takedown` (taslak içerik, açıkça işaretli) + keşif için footer. Blog ⏳.
-- ✅ **Boş/hata:** `[locale]/not-found.tsx`, `error.tsx`, kök `global-error.tsx` (i18n). Ek `loading.tsx`'ler ⏳.
+- ✅ **Legal + footer:** `/terms`, `/privacy`, `/takedown` (taslak içerik, açıkça işaretli) + keşif için footer.
+- ✅ **Boş/hata:** `[locale]/not-found.tsx`, `error.tsx`, kök `global-error.tsx` (i18n) + dashboard/watchlist/alerts/detay `loading.tsx` iskeletleri.
 - ✅ **Programatik SEO:** `/countries/[country]` + `/sectors/[sector]` (dinamik stat + liste + FAQPage schema). **`NEXT_PUBLIC_SEO_LIVE` bayrağıyla korumalı** — varsayılan kapalı; seed/örnek veri indekslenmez ve sitemap'e girmez. Gerçek veri gelince `true` yap.
-- ⏳ **Gözlemlenebilirlik:** Sentry (`instrumentation.ts`, web+worker), PostHog provider + funnel event'leri (env gelince aktive olur).
-- ⏳ **Blog** (MDX iskelet) · **Playwright smoke** · ek `loading.tsx`'ler · Lighthouse mobil >85.
+- ✅ **Gözlemlenebilirlik:** Sentry (web instrumentation + worker) + PostHog provider — hepsi env-gated (DSN/key gelince aktive olur, şimdi uykuda).
+- ✅ **Blog:** `/blog` + `/blog/[slug]` iskelet (veri-tabanlı, Article schema, noindex; sonra MDX/CMS'e çevrilir).
+- ✅ **Playwright smoke:** landing/search/detay/pricing halka açık yol (`pnpm --filter web test:e2e`). Auth-gated akışlar (Clerk test user) → takip görevi.
+- ⏳ **Lighthouse:** deploy sonrası prod build'e karşı çalıştır (dev puanı yanıltıcı); hedef mobil >85.
 
 > ⚠️ **Veri notu:** Seed ihaleleri örnektir, kullanılmayacak. Gerçek ihale kaynakları kurucudan gelecek (Python scraper → `/api/ingest`). Programatik SEO indekslemesi (`NEXT_PUBLIC_SEO_LIVE`) ve AI worker (çeviri/özet/çıkarım) o gerçek veriyle açılacak.
 
