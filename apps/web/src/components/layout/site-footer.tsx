@@ -7,22 +7,22 @@ export async function SiteFooter() {
   const pricingLabel = locale === "tr" ? "Fiyatlandırma" : "Pricing";
 
   return (
-    <footer className="mt-16 border-t border-neutral-100">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-6 py-8 text-sm text-neutral-500">
-        <span className="font-semibold text-neutral-700">Tenderlist</span>
-        <Link href="/pricing" className="hover:text-neutral-900">
+    <footer className="mt-16 border-t border-white/10 bg-[#050d1f]">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-6 py-8 text-sm text-white/60">
+        <span className="font-semibold text-white">Tenderlist</span>
+        <Link href="/pricing" className="hover:text-white">
           {pricingLabel}
         </Link>
-        <Link href="/terms" className="hover:text-neutral-900">
+        <Link href="/terms" className="hover:text-white">
           {legal("terms.title")}
         </Link>
-        <Link href="/privacy" className="hover:text-neutral-900">
+        <Link href="/privacy" className="hover:text-white">
           {legal("privacy.title")}
         </Link>
-        <Link href="/takedown" className="hover:text-neutral-900">
+        <Link href="/takedown" className="hover:text-white">
           {legal("takedown.title")}
         </Link>
-        <span className="ml-auto text-neutral-400">© 2026 Tenderlist</span>
+        <span className="ml-auto text-white/40">© 2026 Tenderlist</span>
       </div>
     </footer>
   );

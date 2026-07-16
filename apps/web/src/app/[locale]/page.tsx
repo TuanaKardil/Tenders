@@ -114,9 +114,10 @@ export default async function LandingPage({
         </div>
       </section>
 
-      {/* Latest tenders */}
+      {/* Latest tenders — blue-tinted band bridging the dark hero into the light body */}
       {latest && latest.hits.length > 0 && (
-        <section className="mx-auto max-w-4xl px-6 py-16">
+        <section className="bg-gradient-to-b from-brand-subtle to-white">
+          <div className="mx-auto max-w-4xl px-6 py-16">
           <h2 className="mb-6 text-lg font-semibold text-neutral-900">
             {t("latestTitle")}
           </h2>
@@ -128,10 +129,11 @@ export default async function LandingPage({
           <div className="mt-6 text-center">
             <Link
               href="/search"
-              className="text-sm font-medium text-neutral-600 underline hover:text-neutral-900"
+              className="text-sm font-medium text-primary underline hover:text-primary/80"
             >
               {t("ctaSecondary")} →
             </Link>
+          </div>
           </div>
         </section>
       )}

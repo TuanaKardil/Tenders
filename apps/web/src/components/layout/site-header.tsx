@@ -17,9 +17,9 @@ export async function SiteHeader() {
   ] as const;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/80 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050d1f]/90 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-6">
-        <Link href="/" className="text-sm font-bold tracking-tight text-primary">
+        <Link href="/" className="text-sm font-bold tracking-tight text-white">
           {common("appName")}
         </Link>
         <nav className="hidden items-center gap-5 sm:flex">
@@ -27,7 +27,7 @@ export async function SiteHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm text-neutral-600 hover:text-neutral-900"
+              className="text-sm text-white/70 hover:text-white"
             >
               {item.label}
             </Link>
@@ -36,7 +36,7 @@ export async function SiteHeader() {
         <div className="ml-auto flex items-center gap-3">
           <LocaleSwitcher />
           <SignedOut>
-            <Link href="/sign-in" className="text-sm text-neutral-600 hover:text-neutral-900">
+            <Link href="/sign-in" className="text-sm text-white/70 hover:text-white">
               {common("signIn")}
             </Link>
             <Button size="sm" render={<Link href="/sign-up" />}>
