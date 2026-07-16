@@ -75,13 +75,13 @@ export default async function LandingPage({
           aria-hidden="true"
         />
         <div className="relative z-10 mx-auto max-w-4xl px-6 pb-40 pt-20 text-center md:pb-56 md:pt-28">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-white/70">
+          <p className="mb-4 text-base font-semibold uppercase tracking-widest text-white/80">
             {common("appName")}
           </p>
-          <h1 className="text-glow mx-auto max-w-2xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+          <h1 className="text-glow mx-auto max-w-3xl text-5xl font-semibold tracking-tight text-white sm:text-6xl">
             {t("heroTitle")}
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-white/75">
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-white/85">
             {t("heroSubtitle")}
           </p>
 
@@ -94,10 +94,10 @@ export default async function LandingPage({
           <div className="mt-10 flex items-center justify-center gap-10">
             {stats.map((stat) => (
               <div key={stat.label}>
-                <div className="text-2xl font-semibold tabular-nums text-white">
+                <div className="text-3xl font-semibold tabular-nums text-white">
                   {stat.value.toLocaleString(loc === "tr" ? "tr-TR" : "en-US")}
                 </div>
-                <div className="text-xs text-white/60">{stat.label}</div>
+                <div className="text-sm text-white/70">{stat.label}</div>
               </div>
             ))}
           </div>

@@ -24,11 +24,13 @@ export default async function MapPage({
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8">
-      <h1 className="text-2xl font-semibold text-neutral-900">{t("title")}</h1>
-      <p className="mt-1 text-sm text-neutral-500">{t("subtitle")}</p>
-      <div className="mt-6">
-        <CountryMap counts={counts} locale={loc} viewAllLabel={t("viewAll")} />
+    <main className="bg-[#050d1f]">
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        <h1 className="text-3xl font-semibold text-white">{t("title")}</h1>
+        <p className="mt-2 text-base text-white/70">{t("subtitle")}</p>
+        <div className="mt-6">
+          <CountryMap counts={counts} locale={loc} viewAllLabel={t("viewAll")} />
+        </div>
       </div>
     </main>
   );

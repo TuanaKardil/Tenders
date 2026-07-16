@@ -28,12 +28,13 @@ export function SearchBar({ placeholder, buttonLabel }: SearchBarProps) {
   return (
     <form onSubmit={submit} className="flex w-full items-center gap-2">
       <div className="relative flex-1">
-        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
+        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/50" />
+        {/* Rendered on the navy band / dark hero — light text + border. */}
         <Input
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholder}
-          className="h-11 pl-9"
+          className="h-11 border-white/25 pl-9 text-white placeholder:text-white/45 caret-white"
           name="q"
         />
       </div>

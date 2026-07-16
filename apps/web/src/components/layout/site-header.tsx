@@ -18,25 +18,25 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050d1f]/90 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-6">
-        <Link href="/" className="text-sm font-bold tracking-tight text-white">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-7 px-6">
+        <Link href="/" className="text-lg font-bold tracking-tight text-white">
           {common("appName")}
         </Link>
-        <nav className="hidden items-center gap-5 sm:flex">
+        <nav className="hidden items-center gap-6 sm:flex">
           {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm text-white/70 hover:text-white"
+              className="text-[15px] font-medium text-white/80 hover:text-white"
             >
               {item.label}
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-4">
           <LocaleSwitcher />
           <SignedOut>
-            <Link href="/sign-in" className="text-sm text-white/70 hover:text-white">
+            <Link href="/sign-in" className="text-[15px] text-white/80 hover:text-white">
               {common("signIn")}
             </Link>
             <Button size="sm" render={<Link href="/sign-up" />}>

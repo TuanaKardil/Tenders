@@ -59,13 +59,17 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8">
-      <div className="mb-6">
-        <Suspense>
-          <SearchBar placeholder={t("placeholder")} buttonLabel={t("button")} />
-        </Suspense>
+    <main>
+      {/* Navy search band — continues the site chrome from the landing hero */}
+      <div className="border-b border-white/10 bg-[#050d1f]">
+        <div className="mx-auto max-w-6xl px-6 py-6">
+          <Suspense>
+            <SearchBar placeholder={t("placeholder")} buttonLabel={t("button")} />
+          </Suspense>
+        </div>
       </div>
 
+      <div className="mx-auto max-w-6xl px-6 py-8">
       <div className="flex flex-col gap-8 lg:flex-row">
         <Suspense>
           <FacetSidebar
@@ -160,6 +164,7 @@ export default async function SearchPage({ params, searchParams }: SearchPagePro
           </>
           )}
         </div>
+      </div>
       </div>
     </main>
   );

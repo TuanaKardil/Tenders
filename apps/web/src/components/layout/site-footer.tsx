@@ -7,7 +7,7 @@ export async function SiteFooter() {
   const pricingLabel = locale === "tr" ? "Fiyatlandırma" : "Pricing";
 
   return (
-    <footer className="mt-16 border-t border-white/10 bg-[#050d1f]">
+    <footer className="border-t border-white/10 bg-[#050d1f]">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-6 py-8 text-sm text-white/60">
         <span className="font-semibold text-white">Tenderlist</span>
         <Link href="/pricing" className="hover:text-white">
