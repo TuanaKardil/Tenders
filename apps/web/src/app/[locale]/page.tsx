@@ -55,16 +55,28 @@ export default async function LandingPage({
     <main>
       <JsonLd data={organizationLd()} />
       <JsonLd data={websiteLd()} />
-      {/* Hero */}
-      <section className="border-b border-neutral-100 bg-gradient-to-b from-brand-subtle to-white">
-        <div className="mx-auto max-w-4xl px-6 pb-16 pt-20 text-center">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-primary">
+      {/* Hero — dark earth video (poster fallback covers reduced-motion / slow loads) */}
+      <section className="relative overflow-hidden bg-[#02040a] bg-[url('/hero/earth-poster.jpg')] bg-cover bg-bottom">
+        <video
+          className="hero-video absolute inset-0 h-full w-full object-cover object-bottom"
+          src="/hero/earth.mp4"
+          poster="/hero/earth-poster.jpg"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+        />
+        <div className="absolute inset-0 bg-black/25" aria-hidden="true" />
+        <div className="relative z-10 mx-auto max-w-4xl px-6 pb-40 pt-20 text-center md:pb-56 md:pt-28">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-white/70">
             {common("appName")}
           </p>
-          <h1 className="mx-auto max-w-2xl text-4xl font-semibold tracking-tight text-neutral-900 sm:text-5xl">
+          <h1 className="text-glow mx-auto max-w-2xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             {t("heroTitle")}
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-neutral-600">
+          <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-white/75">
             {t("heroSubtitle")}
           </p>
 
@@ -77,10 +89,10 @@ export default async function LandingPage({
           <div className="mt-10 flex items-center justify-center gap-10">
             {stats.map((stat) => (
               <div key={stat.label}>
-                <div className="text-2xl font-semibold tabular-nums text-neutral-900">
+                <div className="text-2xl font-semibold tabular-nums text-white">
                   {stat.value.toLocaleString(loc === "tr" ? "tr-TR" : "en-US")}
                 </div>
-                <div className="text-xs text-neutral-500">{stat.label}</div>
+                <div className="text-xs text-white/60">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -94,7 +106,7 @@ export default async function LandingPage({
             </Link>
             <Link
               href="/search"
-              className="rounded-lg border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-neutral-100"
+              className="rounded-lg border border-white/40 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10"
             >
               {t("ctaSecondary")}
             </Link>

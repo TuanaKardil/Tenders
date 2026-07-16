@@ -137,3 +137,17 @@
     @apply font-sans;
   }
 }
+
+/* Landing hero: soft glow for light text over the dark earth video. */
+.text-glow {
+  text-shadow:
+    0 0 40px rgba(255, 255, 255, 0.35),
+    0 0 80px rgba(96, 165, 250, 0.25);
+}
+
+/* Respect reduced motion: hide the looping video, the poster background remains. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-video {
+    display: none;
+  }
+}
