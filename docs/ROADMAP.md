@@ -100,6 +100,18 @@ Yapılanlar:
 
 ---
 
+## Harita geliştirme yolu (araştırıldı — Tem 2026)
+
+Mevcut: MapLibre v5 **globe projeksiyonu** (koyu stil, parlayan mavi baloncuklar, boşta
+otomatik dönüş). Sıradaki adaylar (etki/efor sırasıyla):
+1. **Choropleth** — ülkeleri ihale yoğunluğuna göre mavi tonlarıyla boya (skill önerisi;
+   ülke sınırları GeoJSON + fill layer; lejant şart).
+2. **Ülkeye tıkla → fly-to + yakınlaş** — baloncuğa tıklayınca küre o ülkeye dönsün.
+3. **Sektör filtresi** — haritada sektöre göre baloncuk filtreleme.
+4. **Değer ısı haritası** — value_usd_est ile heatmap katmanı (gerçek veri gelince anlamlı).
+5. **Şehir seviyesi** — zoom > 4'te ülke baloncukları şehir noktalarına ayrışsın (gerçek
+   koordinatlı veri gerektirir → ingestion sonrası).
+
 ## Açık kararlar (varsayılanla ilerlenebilir)
 
 - Alan adı: `tenderlist.app` placeholder — karar verilince `EMAIL_FROM`/`NEXT_PUBLIC_APP_URL`/SEO güncellenir.
