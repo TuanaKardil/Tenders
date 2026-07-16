@@ -151,3 +151,21 @@
     display: none;
   }
 }
+
+/*
+ * Dawn ramp under the earth hero (Aurora UI: multi-stop blend through blue
+ * midtones so the dark-to-light transition never turns muddy gray).
+ * Starts at the hero's base color, opens up to white.
+ */
+.atmosphere-fade {
+  background: linear-gradient(
+    180deg,
+    #02040a 0%,
+    #071a36 14%,
+    #16406e 32%,
+    #4f7fae 52%,
+    #a8c6e2 70%,
+    #e8f1fa 85%,
+    #ffffff 100%
+  );
+}

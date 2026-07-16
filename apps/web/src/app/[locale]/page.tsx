@@ -69,6 +69,11 @@ export default async function LandingPage({
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-black/25" aria-hidden="true" />
+        {/* Melt the video's bottom edge into the dawn ramp below. */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-[#02040a]"
+          aria-hidden="true"
+        />
         <div className="relative z-10 mx-auto max-w-4xl px-6 pb-40 pt-20 text-center md:pb-56 md:pt-28">
           <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-white/70">
             {common("appName")}
@@ -114,11 +119,11 @@ export default async function LandingPage({
         </div>
       </section>
 
-      {/* Latest tenders — blue-tinted band bridging the dark hero into the light body */}
+      {/* Latest tenders — dawn ramp continues the hero's dark base and opens to white */}
       {latest && latest.hits.length > 0 && (
-        <section className="bg-gradient-to-b from-brand-subtle to-white">
+        <section className="atmosphere-fade">
           <div className="mx-auto max-w-4xl px-6 py-16">
-          <h2 className="mb-6 text-lg font-semibold text-neutral-900">
+          <h2 className="mb-6 text-lg font-semibold text-white">
             {t("latestTitle")}
           </h2>
           <div className="space-y-3">
