@@ -68,7 +68,7 @@ export function OnboardingWizard({ locale, labels }: { locale: "en" | "tr"; labe
               className={cn(
                 "flex size-7 items-center justify-center rounded-full text-xs font-semibold",
                 i < step
-                  ? "bg-neutral-900 text-white"
+                  ? "bg-primary text-white"
                   : i === step
                     ? "border-2 border-neutral-900 text-neutral-900"
                     : "border border-neutral-300 text-neutral-400"
@@ -100,7 +100,7 @@ export function OnboardingWizard({ locale, labels }: { locale: "en" | "tr"; labe
                 className={cn(
                   "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
                   sectors.includes(sector.slug)
-                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    ? "border-neutral-900 bg-primary text-white"
                     : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
                 )}
               >
@@ -122,7 +122,7 @@ export function OnboardingWizard({ locale, labels }: { locale: "en" | "tr"; labe
                 className={cn(
                   "rounded-full border px-3.5 py-1.5 text-sm transition-colors",
                   countries.includes(country.code)
-                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    ? "border-neutral-900 bg-primary text-white"
                     : "border-neutral-300 text-neutral-700 hover:border-neutral-500"
                 )}
               >

@@ -164,7 +164,7 @@ function PeriodToggle({
           onClick={() => onChange(p)}
           className={cn(
             "rounded-full px-4 py-1.5 transition-colors",
-            period === p ? "bg-neutral-900 text-white" : "text-neutral-600 hover:text-neutral-900"
+            period === p ? "bg-primary text-primary-foreground" : "text-neutral-600 hover:text-neutral-900"
           )}
         >
           {labels[p]}
@@ -197,11 +197,11 @@ function PlanCard({
     <div
       className={cn(
         "relative flex flex-col rounded-2xl border p-6",
-        highlighted ? "border-neutral-900 shadow-sm" : "border-neutral-200"
+        highlighted ? "border-primary shadow-sm" : "border-neutral-200"
       )}
     >
       {badge && (
-        <span className="absolute -top-2.5 left-6 rounded-full bg-neutral-900 px-2.5 py-0.5 text-xs font-medium text-white">
+        <span className="absolute -top-2.5 left-6 rounded-full bg-primary px-2.5 py-0.5 text-xs font-medium text-primary-foreground">
           {badge}
         </span>
       )}
@@ -214,7 +214,7 @@ function PlanCard({
       <ul className="mt-6 flex-1 space-y-2.5">
         {features.map((f) => (
           <li key={f} className="flex items-start gap-2 text-sm text-neutral-700">
-            <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+            <Check className="mt-0.5 size-4 shrink-0 text-primary" />
             <span>{f}</span>
           </li>
         ))}

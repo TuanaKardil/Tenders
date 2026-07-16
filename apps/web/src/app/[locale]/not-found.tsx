@@ -10,7 +10,7 @@ export default async function NotFound() {
       <p className="mt-2 text-sm text-neutral-500">{t("notFoundHint")}</p>
       <Link
         href="/"
-        className="mt-6 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700"
+        className="mt-6 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
       >
         {t("backHome")}
       </Link>

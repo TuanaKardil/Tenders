@@ -35,7 +35,7 @@ export default function OgImage() {
           <span>One search away.</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 40, height: 8, background: "#059669", borderRadius: 4 }} />
+          <div style={{ width: 40, height: 8, background: "#2563eb", borderRadius: 4 }} />
           <div style={{ fontSize: 28, color: "#6b7280" }}>
             Search, track and win public-sector tenders worldwide
           </div>

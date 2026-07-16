@@ -11,7 +11,7 @@ export default function Error({ reset }: { error: Error & { digest?: string }; r
       <button
         type="button"
         onClick={reset}
-        className="mt-6 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700"
+        className="mt-6 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
       >
         {t("retry")}
       </button>

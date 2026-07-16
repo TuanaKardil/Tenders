@@ -19,7 +19,7 @@ export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-6">
-        <Link href="/" className="text-sm font-bold tracking-tight text-neutral-900">
+        <Link href="/" className="text-sm font-bold tracking-tight text-primary">
           {common("appName")}
         </Link>
         <nav className="hidden items-center gap-5 sm:flex">

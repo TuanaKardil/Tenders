@@ -54,7 +54,7 @@ export default async function OgImage({
           {clamped}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 24, fontSize: 30 }}>
-          <div style={{ width: 40, height: 8, background: "#059669", borderRadius: 4 }} />
+          <div style={{ width: 40, height: 8, background: "#2563eb", borderRadius: 4 }} />
           {country && <span style={{ color: "#374151" }}>{country}</span>}
           {value && <span style={{ color: "#6b7280" }}>· {value}</span>}
         </div>

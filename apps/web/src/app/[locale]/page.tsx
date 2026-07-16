@@ -56,9 +56,9 @@ export default async function LandingPage({
       <JsonLd data={organizationLd()} />
       <JsonLd data={websiteLd()} />
       {/* Hero */}
-      <section className="border-b border-neutral-100 bg-gradient-to-b from-neutral-50 to-white">
+      <section className="border-b border-neutral-100 bg-gradient-to-b from-brand-subtle to-white">
         <div className="mx-auto max-w-4xl px-6 pb-16 pt-20 text-center">
-          <p className="mb-4 text-sm font-medium uppercase tracking-widest text-neutral-500">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-primary">
             {common("appName")}
           </p>
           <h1 className="mx-auto max-w-2xl text-4xl font-semibold tracking-tight text-neutral-900 sm:text-5xl">
@@ -88,7 +88,7 @@ export default async function LandingPage({
           <div className="mt-10 flex items-center justify-center gap-4">
             <Link
               href="/onboarding"
-              className="rounded-lg bg-neutral-900 px-5 py-3 text-sm font-semibold text-white hover:bg-neutral-700"
+              className="rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-primary/90"
             >
               {t("ctaPrimary")}
             </Link>
