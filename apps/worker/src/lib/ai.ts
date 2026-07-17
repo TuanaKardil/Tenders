@@ -1,4 +1,4 @@
-import { TRANSLATE_SUMMARIZE_PROMPT } from "../prompts/translate-summarize";
+import { loadPrompt } from "./prompts";
 
 /** Minimal OpenRouter (OpenAI-compatible) client for translate + summarize. */
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
@@ -27,8 +27,7 @@ export interface TsOutput {
   summary_tr: string;
 }
 
-// The prompt lives in src/prompts/translate-summarize.ts for easy review/editing.
-const SYSTEM = TRANSLATE_SUMMARIZE_PROMPT;
+// The prompt text lives in the repo-root PROMPTS.md (loaded at runtime).
 
 export async function translateSummarize(input: TsInput): Promise<TsOutput> {
   const key = process.env.OPENROUTER_API_KEY;
@@ -59,7 +58,7 @@ export async function translateSummarize(input: TsInput): Promise<TsOutput> {
       temperature: 0.3,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: SYSTEM },
+        { role: "system", content: loadPrompt("translate-summarize") },
         { role: "user", content: JSON.stringify(facts) },
       ],
     }),

@@ -5,6 +5,7 @@ Africa-first global tender discovery SaaS. Core loop:
 
 ## ⚠️ Read first
 - **Roadmap + phase status:** [`docs/ROADMAP.md`](./docs/ROADMAP.md) — single source of truth. Check it before starting any work; update it when a phase/setup step is done.
+- **AI prompts:** [`PROMPTS.md`](./PROMPTS.md) (repo root) — every AI prompt, one section per task. Code reads prompt text from this file at runtime; edit there, no code change needed.
 - **Service setup guide (accounts, keys):** [`docs/SETUP.md`](./docs/SETUP.md).
 - **Secret keys go only** in `.env` and `apps/web/.env.local` — never committed to git.
 
@@ -18,7 +19,6 @@ Deploy: Vercel (web) + Railway (worker).
 ```
 apps/web        Next.js app (App Router, [locale] segment)
 apps/worker     BullMQ workers (normalize, alert, email-dispatch, index-sync, ...)
-                └─ src/prompts/  ALL AI prompts live here, one file per task (see its README)
 packages/config entitlements, pricing, quota, queue names, search settings (@repo/config)
 packages/db     Drizzle schema + migrations + seed (@repo/db)
 packages/emails React Email templates (@repo/emails)
