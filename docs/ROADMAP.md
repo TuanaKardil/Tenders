@@ -96,7 +96,26 @@ Yapılanlar:
 - ✅ **Playwright smoke:** landing/search/detay/pricing halka açık yol (`pnpm --filter web test:e2e`). Auth-gated akışlar (Clerk test user) → takip görevi.
 - ⏳ **Lighthouse:** deploy sonrası prod build'e karşı çalıştır (dev puanı yanıltıcı); hedef mobil >85.
 
-> ⚠️ **Veri notu:** Seed ihaleleri örnektir, kullanılmayacak. Gerçek ihale kaynakları kurucudan gelecek (Python scraper → `/api/ingest`). Programatik SEO indekslemesi (`NEXT_PUBLIC_SEO_LIVE`) ve AI worker (çeviri/özet/çıkarım) o gerçek veriyle açılacak.
+## Gerçek veri / scraper'lar (başladı — Tem 2026)
+
+Sahte seed silindi. Scraper'lar **repo içinde TS adapter** olarak (`apps/worker/src/scrapers/`),
+`backfill.ts` ile çalışıyor (şimdilik Redis kuyruğunu bypass eden doğrudan yükleme, çünkü
+Upstash kotası dolu). Kural: **sadece açık VE son ~7 günde yayınlanmış** ihaleler (veri taze/az).
+
+| Kaynak | Slug | Tip | Durum |
+|--------|------|-----|-------|
+| TED (AB) | `ted-eu` | Resmi REST API | ✅ **canlı** (44 açık ihale, 5 CPV kategorisi) |
+| Uganda eGP | `ug-egp` | Server-render HTML | ⏳ adapter (orta) |
+| UNGM | `ungm` | İç arama API | ⏳ adapter (orta) |
+| Kenya PPIP | `ke-ppip` | Laravel/Inertia SPA | ⏳ adapter (zor — gömülü JSON) |
+| Etiyopya eGP | `et-egp` | Angular SPA | ⏳ adapter (en zor — headless olabilir) |
+
+**Sonraki büyük iş — belge çıkarımı:** İhale bilgisi çoğu zaman ekli **PDF/Word/görselin
+içinde**. Gerekli: PDF metin çıkarımı + görsel için **OCR** → AI (OpenRouter) ile yapılandırılmış
+alanlara. Bu, AI worker fazının parçası.
+
+**Açık işler:** EU ülke centroid'leri (globe haritasında AB baloncukları için) · düzenli
+scraping için worker+Redis zamanlaması (deploy'da) · `sourceUrl` http/https doğrulaması.
 
 ---
 
