@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/server/auth";
 export const dynamic = "force-dynamic";
 
 const NAV = [
-  { href: "/admin/coverage", label: "Kaynak kapsamı" },
+  { href: "/admin/kapsam", label: "Kaynak kapsamı" },
   { href: "/admin/tenders", label: "İhaleler" },
   { href: "/admin/sources", label: "Kaynaklar" },
   { href: "/admin/runs", label: "Çekim kayıtları" },
