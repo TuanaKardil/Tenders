@@ -18,6 +18,7 @@ Deploy: Vercel (web) + Railway (worker).
 ```
 apps/web        Next.js app (App Router, [locale] segment)
 apps/worker     BullMQ workers (normalize, alert, email-dispatch, index-sync, ...)
+                └─ src/prompts/  ALL AI prompts live here, one file per task (see its README)
 packages/config entitlements, pricing, quota, queue names, search settings (@repo/config)
 packages/db     Drizzle schema + migrations + seed (@repo/db)
 packages/emails React Email templates (@repo/emails)
