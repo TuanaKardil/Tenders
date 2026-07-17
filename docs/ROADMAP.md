@@ -1,11 +1,11 @@
-# Tenderlist — Yol Haritası (tek doğruluk kaynağı)
+# Tenderlist — Roadmap (single source of truth)
 
-> Bu dosya, sohbet kapansa bile planın kaybolmaması için repoda tutulur.
-> **Her faz / kurulum adımı bitince buradaki durumu güncelle.**
-> Adım-adım hesap kurulum rehberi: [`docs/KURULUM.md`](./KURULUM.md).
+> Kept in the repo so the plan survives even if the chat is closed.
+> **Update the status here whenever a phase / setup step is done.**
+> Step-by-step account setup guide: [`docs/SETUP.md`](./SETUP.md).
 
-Ürün: Afrika-öncelikli global ihale keşif SaaS'ı. Çekirdek döngü:
-kaydol → 3 dakikada alarm kur → işe yarar e-posta al → orijinal kaynağa tıkla.
+Product: Africa-first global tender discovery SaaS. Core loop:
+sign up → set an alert in 3 minutes → get a useful email → click through to the original source.
 
 Stack: Next.js 15 (App Router, TS strict) · Tailwind v4 · shadcn/ui · PostgreSQL (Supabase) +
 Drizzle · Meilisearch · BullMQ + Redis (Upstash) · Clerk · Paddle · Resend · next-intl (en/tr) ·
@@ -13,130 +13,130 @@ Anthropic · PostHog + Sentry · Vercel (web) + Railway (worker).
 
 ---
 
-## Faz durumu
+## Phase status
 
-| Faz | İçerik | Durum |
-|-----|--------|-------|
-| **0** | Monorepo, Next.js/TS/Tailwind/shadcn, BullMQ worker, Drizzle şema, CI (lint+typecheck+test) | ✅ commit'li |
-| **1a** | `api/ingest`, normalize worker, admin sources/runs, seed (200 sahte ihale), migration `0000` | ✅ commit'li |
-| **1b** | `/search` (Meili+facet), `/tenders/[slug]`, `/go/[id]` izlenen yönlendirme, `/map`, landing | ✅ commit'li |
-| **1c** | `/onboarding`, saved-searches, alert motoru (instant/daily/weekly), digest e-posta, `/dashboard`, `/watchlist`+ICS | ✅ commit'li |
-| **Kurulum** | Servisleri gerçek hesaplarla bağla, mevcut özellikleri uçtan uca doğrula | 🔧 **devam ediyor** (aşağıda) |
-| **1d** | Gelir: `/pricing`, Paddle checkout+webhook, Redis metered kotalar, quota-hit/trial e-posta | ✅ kod (Paddle hesabı + env bekliyor) |
-| **1e** | Cila/launch: SEO (sitemap/robots/hreflang/JSON-LD/OG), Sentry+PostHog, legal, `/countries`·`/sectors`·`/blog`, not-found/error | ⏳ |
+| Phase | Content | Status |
+|-------|---------|--------|
+| **0** | Monorepo, Next.js/TS/Tailwind/shadcn, BullMQ worker, Drizzle schema, CI (lint+typecheck+test) | ✅ committed |
+| **1a** | `api/ingest`, normalize worker, admin sources/runs, seed (200 fake tenders), migration `0000` | ✅ committed |
+| **1b** | `/search` (Meili+facets), `/tenders/[slug]`, `/go/[id]` tracked redirect, `/map`, landing | ✅ committed |
+| **1c** | `/onboarding`, saved-searches, alert engine (instant/daily/weekly), digest email, `/dashboard`, `/watchlist`+ICS | ✅ committed |
+| **Setup** | Wire services to real accounts, verify existing features end-to-end | 🔧 **in progress** (below) |
+| **1d** | Revenue: `/pricing`, Paddle checkout+webhook, Redis metered quotas, quota-hit/trial email | ✅ code (awaiting Paddle account + env) |
+| **1e** | Polish/launch: SEO (sitemap/robots/hreflang/JSON-LD/OG), Sentry+PostHog, legal, `/countries`·`/sectors`·`/blog`, not-found/error | ⏳ |
 
-Hazır ama henüz bağlanmamış altyapı: entitlements config (free/starter/pro tüm kotalar,
-`packages/config/src/entitlements.ts`), `subscriptions` tablosu Paddle kolonlarıyla
+Ready but not yet wired: entitlements config (free/starter/pro with all quotas,
+`packages/config/src/entitlements.ts`), `subscriptions` table with Paddle columns
 (`packages/db/src/schema/users.ts`), `planFor()`/`entitlementsForUser()`
-(`apps/web/src/server/plan.ts`). Watchlist + alert limitleri DB-say ile *uygulanıyor*; metered
-kotalar (searches/day, detail views/mo, source clicks/mo) **henüz uygulanmıyor** → Faz 1d.
+(`apps/web/src/server/plan.ts`). Watchlist + alert limits are *enforced* via DB counts; metered
+quotas (searches/day, detail views/mo, source clicks/mo) are **not enforced yet** → Phase 1d.
 
 ---
 
-## Kurulum checklist (öncelikli — gerçek hesaplar)
+## Setup checklist (priority — real accounts)
 
-Detay + doğrulama komutları [`docs/KURULUM.md`](./KURULUM.md)'de. Gizli anahtarlar **sadece**
-`.env` / `apps/web/.env.local`'e (git'e girmez).
+Details + verification commands in [`docs/SETUP.md`](./SETUP.md). Secret keys go **only** in
+`.env` / `apps/web/.env.local` (never committed).
 
-- [x] **Supabase** — DATABASE_URL/DIRECT_URL girili (şifre var)
-- [x] **Supabase** — bağlantı doğrulandı; migrate uygulandı; seed çalıştı (377 sahte ihale, 225 yayında — bilinçli olarak korundu)
-- [x] **Upstash Redis** — `REDIS_URL` bağlı; worker ayağa kalkıyor, 5 schedule kayıtlı
-  - ⚠️ **Upstash ücretsiz kotası (500K komut/ay) tükendi** — BullMQ + zamanlanmış görevler Redis'i sürekli yoklar; dev'de sürekli açık worker kotayı hızla yer. Seçenekler: (a) dev için lokal Redis (`redis-server`) kullan, Upstash'ı sadece deploy'a sakla — orijinal tasarım buydu; (b) Upstash'ı pay-as-you-go'ya yükselt; (c) aylık sıfırlanmayı bekle. Arama/gezinme etkilenmez (Meili); sadece kuyruk/kota Redis'e bağlı.
-- [x] **Meilisearch Cloud** — host+key'ler bağlı; reindex yapıldı (225 doc); `/search` gerçek veriyle HTTP 200
-- [x] **Clerk** — `pk_/sk_` bağlı (web-only); webhook yerine `getCurrentUser` lazy-provision eklendi (lokal için)
-- [ ] **Anthropic** — `ANTHROPIC_API_KEY` → AI özet/extraction (🟡 sonra, seed özetleri hazır)
-- [ ] **Resend** — `RESEND_API_KEY` + `EMAIL_FROM` → alarm e-postaları (🟡 sonra, dev'de log)
-- [x] **Uçtan uca smoke (tarayıcı)** — landing/search/detay/map/dashboard gerçek veriyle çalışıyor; Clerk oturumu + kayıtlı arama + lazy-provision doğrulandı. Kalan: gerçek e-posta gönderimi (Resend) test edilmedi.
+- [x] **Supabase** — DATABASE_URL/DIRECT_URL filled in (password set)
+- [x] **Supabase** — connection verified; migrate applied; seed ran (377 fake tenders, 225 published — kept on purpose)
+- [x] **Upstash Redis** — `REDIS_URL` connected; worker boots, 5 schedules registered
+  - ⚠️ **Upstash free quota (500K commands/month) exhausted** — BullMQ + scheduled jobs poll Redis constantly; a worker left running in dev burns the quota fast. Options: (a) use local Redis (`redis-server`) for dev and keep Upstash for deploy only — the original design; (b) upgrade Upstash to pay-as-you-go; (c) wait for the monthly reset. Search/browsing is unaffected (Meili); only queues/quotas depend on Redis.
+- [x] **Meilisearch Cloud** — host+keys connected; reindexed (225 docs); `/search` returns HTTP 200 with real data
+- [x] **Clerk** — `pk_/sk_` connected (web-only); instead of the webhook, `getCurrentUser` lazy-provision added (for local)
+- [ ] **Anthropic** — `ANTHROPIC_API_KEY` → AI summary/extraction (🟡 later, seed summaries ready)
+- [ ] **Resend** — `RESEND_API_KEY` + `EMAIL_FROM` → alert emails (🟡 later, logged in dev)
+- [x] **End-to-end smoke (browser)** — landing/search/detail/map/dashboard work with real data; Clerk session + saved search + lazy-provision verified. Remaining: real email sending (Resend) not tested.
 
-**Konumlandırma:** Ürün Afrika'ya özgü değil — **global**; Afrika sadece şimdiki seed kaynakları. Landing/i18n/map metinleri "Afrika" → "global/dünya" olarak güncellendi.
+**Positioning:** The product is not Africa-specific — it's **global**; Africa is just the current seed sources. Landing/i18n/map copy updated from "Africa" → "global/world".
 
-**AI sağlayıcı:** Anthropic yerine **OpenRouter** (OpenAI-uyumlu). `.env`: `OPENROUTER_API_KEY` + `OPENROUTER_MODEL=google/gemini-2.5-flash` (bulk çeviri/özet/çıkarım workhorse'u; düşük-güven kayıtlar için daha güçlü modele yükseltilebilir). **AI worker'ı henüz yazılmadı** (extract/translate-summarize kuyrukları boş) — TR aramanın çalışması buna bağlı.
+**AI provider:** **OpenRouter** instead of Anthropic (OpenAI-compatible). `.env`: `OPENROUTER_API_KEY` + `OPENROUTER_MODEL=google/gemini-2.5-flash` (bulk translate/summarize/extract workhorse; can escalate low-confidence records to a stronger model). **The AI worker is not written yet** (extract/translate-summarize queues empty) — TR search depends on it.
 
-**Deneme bulguları (iyileştirme):**
-- ✅ 🗺️ Harita — `NEXT_PUBLIC_MAPTILER_KEY` eklendi; tile'lar, sınırlar ve balon→ülke paneli çalışıyor.
-- 🌐 TR arama/alarm 0 döner → seed ihaleleri İngilizce (title_tr/summary_tr boş); AI worker (OpenRouter) çeviriyi üretince düzelir.
-- 🏠 Landing'de brief'teki fiyat teaser'ı / harita teaser'ı / FAQ yok → Faz 1e.
-- 📄 İhale detayında "Alarm kur" ve "Paylaş" butonları yok (brief'te var) → küçük ekleme.
-- ⚠️ Next dev "1 Issue" göstergesi (runtime hatası yok, console temiz) → launch öncesi temizlenmeli.
+**Trial findings (improvements):**
+- ✅ 🗺️ Map — `NEXT_PUBLIC_MAPTILER_KEY` added; tiles, borders and bubble→country panel work.
+- 🌐 TR search/alerts return 0 → seed tenders are English (title_tr/summary_tr empty); fixed once the AI worker (OpenRouter) produces translations.
+- 🏠 Landing lacks the brief's pricing teaser / map teaser / FAQ → Phase 1e.
+- 📄 Tender detail lacks "Set alert" and "Share" buttons (in the brief) → small addition.
+- ⚠️ Next dev "1 Issue" indicator (no runtime error, console clean) → clean up before launch.
 
-**Kod desteği (bu turda eklendi):** worker `pnpm dev` artık `--env-file=../../.env` ile kök `.env` okuyor; `getCurrentUser` (`apps/web/src/server/auth.ts`) kullanıcıyı ilk girişte oluşturuyor.
+**Code support (added this session):** worker `pnpm dev` now reads the root `.env` via `--env-file=../../.env`; `getCurrentUser` (`apps/web/src/server/auth.ts`) creates the user on first sign-in.
 
-Sonraya (fazlarla gelir): MapTiler (harita tile), Paddle (1d), PostHog + Sentry (1e).
-
----
-
-## Faz 1d — Gelir (kod ✅ bitti, aktivasyon kullanıcı kararıyla ertelendi)
-
-> ⏸️ **Ödeme aktivasyonu şimdilik park edildi (kullanıcı kararı).** Kod uykuda: checkout "not configured", webhook "not configured" döner — maliyet/yan etki yok. Sağlayıcı kararı: **Paddle** (MoR, global, düşük-fiyatlı B2B için taksit avantajı zayıf olduğundan iyzico şimdilik gereksiz; Stripe TR merkezli tüzel kişilikte açılamaz). iyzico ancak TR ana düşük-fiyatlı kanal olursa eklenecek — mimari (`subscriptions` + `planFor`) sağlayıcı-bağımsız, ekleme = 1 webhook + 1 checkout.
-
-Kod tamam ve doğrulandı (typecheck/lint/test yeşil, sayfalar tarayıcıda gezildi). **Aktive olması için Paddle sandbox kurulumu gerekli** (KURULUM.md Faz 1d): sandbox hesabı → `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `NEXT_PUBLIC_PADDLE_ENV`; Catalog'da Starter/Pro ürünleri → 4 price ID (`NEXT_PUBLIC_PADDLE_PRICE_*`); deploy sonrası webhook → `/api/webhooks/paddle`. Env gelince checkout butonları ve abonelik→plan akışı otomatik çalışır.
-
-Yapılanlar:
-
-- Yeni dep: `@paddle/paddle-node-sdk`, `@paddle/paddle-js`.
-- `packages/config/src/pricing.ts` — Starter $19/ay·$190/yıl, Pro $59/ay·$590/yıl; 4 price ID env'den.
-- `packages/config/src/quota.ts` + `apps/web/src/server/quota.ts` — Redis `INCR`+TTL sayaçları (`q:search:{uid}:{gün}`, `q:detail`/`q:click:{uid}:{ay}`).
-- `apps/web/src/app/[locale]/pricing/page.tsx` — 3 plan + karşılaştırma + aylık/yıllık + Paddle overlay. Yeni i18n `pricing`.
-- `apps/web/src/app/api/webhooks/paddle/route.ts` — imza doğrula → `subscriptions` upsert.
-- Kota gate'leri: ✅ `/go/[tenderId]` (click), ✅ `/search` (searchesPerDay + archiveDays). ⏸️ `/tenders/[slug]` (detailViews) **bilinçli ertelendi** — per-user gate detay sayfasını dinamikleştirip ISR/SEO'yu bozardı; sonra soft/client-side sayaçla ele alınacak.
-- Entitlement uygulaması: `aiSummaries`, `csvExport` (Pro), `eligibilityAi` (Pro).
-- `<UpgradePrompt>` + `/pricing` CTA'ları.
-- E-posta: `quota-hit.tsx` + `trial-payment-issue.tsx` template + email-dispatch renderer.
-- Test: `quota.test.ts`, Paddle webhook unit testi, `entitlements.test.ts` genişletme.
-
-## Faz 1e — Cila/launch (kod, devam ediyor)
-
-- ✅ **SEO:** `sitemap.ts` (statik + yayında tenders), `robots.ts`, `metadataBase` + hreflang/canonical, JSON-LD (Organization/WebSite+SearchAction landing, BreadcrumbList detay — **JobPosting yok**). Tarayıcıda doğrulandı.
-- ✅ **OG:** site geneli varsayılan + `tenders/[slug]/opengraph-image.tsx` (`next/og`); intl middleware'den hariç tutuldu. Görsel doğrulandı.
-- ✅ **Legal + footer:** `/terms`, `/privacy`, `/takedown` (taslak içerik, açıkça işaretli) + keşif için footer.
-- ✅ **Boş/hata:** `[locale]/not-found.tsx`, `error.tsx`, kök `global-error.tsx` (i18n) + dashboard/watchlist/alerts/detay `loading.tsx` iskeletleri.
-- ✅ **Programatik SEO:** `/countries/[country]` + `/sectors/[sector]` (dinamik stat + liste + FAQPage schema). **`NEXT_PUBLIC_SEO_LIVE` bayrağıyla korumalı** — varsayılan kapalı; seed/örnek veri indekslenmez ve sitemap'e girmez. Gerçek veri gelince `true` yap.
-- ✅ **Gözlemlenebilirlik:** Sentry (web instrumentation + worker) + PostHog provider — hepsi env-gated (DSN/key gelince aktive olur, şimdi uykuda).
-- ✅ **Blog:** `/blog` + `/blog/[slug]` iskelet (veri-tabanlı, Article schema, noindex; sonra MDX/CMS'e çevrilir).
-- ✅ **Playwright smoke:** landing/search/detay/pricing halka açık yol (`pnpm --filter web test:e2e`). Auth-gated akışlar (Clerk test user) → takip görevi.
-- ⏳ **Lighthouse:** deploy sonrası prod build'e karşı çalıştır (dev puanı yanıltıcı); hedef mobil >85.
-
-## Gerçek veri / scraper'lar (başladı — Tem 2026)
-
-Sahte seed silindi. Scraper'lar **repo içinde TS adapter** olarak (`apps/worker/src/scrapers/`),
-`backfill.ts` ile çalışıyor (şimdilik Redis kuyruğunu bypass eden doğrudan yükleme, çünkü
-Upstash kotası dolu). Kural: **sadece açık VE son ~7 günde yayınlanmış** ihaleler (veri taze/az).
-
-| Kaynak | Slug | Tip | Durum |
-|--------|------|-----|-------|
-| TED (AB) | `ted-eu` | Resmi REST API | ✅ canlı (~44) |
-| Uganda eGP | `ug-egp` | Server-render HTML (cheerio) | ✅ canlı (~5) |
-| UNGM | `ungm` | Arama POST → HTML satır (cheerio) | ✅ canlı (~14) |
-| Kenya PPIP | `ke-ppip` | Gizli JSON API `/api/active-tenders` | ✅ canlı (~148) |
-| Etiyopya eGP | `et-egp` | Gizli JSON API `cms-v2/get-grouped-sourcing` | ✅ canlı (~50) |
-
-**5/5 kaynak canlı** — ~261 gerçek açık ihale (son 7 gün, gelecek-tarihli elenir). SPA'ların
-(Kenya/Etiyopya) arka API'leri bulundu, headless gerekmedi. Kural: `apps/worker/src/scrapers/shared.ts`
-`isRecentAndOpen` (açık + son 7 gün + gelecek değil, gün-sonu toleranslı).
-
-**Sonraki büyük iş — belge çıkarımı:** İhale bilgisi çoğu zaman ekli **PDF/Word/görselin
-içinde**. Gerekli: PDF metin çıkarımı + görsel için **OCR** → AI (OpenRouter) ile yapılandırılmış
-alanlara. Bu, AI worker fazının parçası.
-
-**Açık işler:** EU ülke centroid'leri (globe haritasında AB baloncukları için) · düzenli
-scraping için worker+Redis zamanlaması (deploy'da) · `sourceUrl` http/https doğrulaması.
+Later (comes with the phases): MapTiler (map tiles), Paddle (1d), PostHog + Sentry (1e).
 
 ---
 
-## Harita geliştirme yolu (araştırıldı — Tem 2026)
+## Phase 1d — Revenue (code ✅ done, activation deferred by user decision)
 
-Mevcut: MapLibre v5 **globe projeksiyonu** (koyu stil, parlayan mavi baloncuklar, boşta
-otomatik dönüş). Sıradaki adaylar (etki/efor sırasıyla):
-1. **Choropleth** — ülkeleri ihale yoğunluğuna göre mavi tonlarıyla boya (skill önerisi;
-   ülke sınırları GeoJSON + fill layer; lejant şart).
-2. **Ülkeye tıkla → fly-to + yakınlaş** — baloncuğa tıklayınca küre o ülkeye dönsün.
-3. **Sektör filtresi** — haritada sektöre göre baloncuk filtreleme.
-4. **Değer ısı haritası** — value_usd_est ile heatmap katmanı (gerçek veri gelince anlamlı).
-5. **Şehir seviyesi** — zoom > 4'te ülke baloncukları şehir noktalarına ayrışsın (gerçek
-   koordinatlı veri gerektirir → ingestion sonrası).
+> ⏸️ **Payment activation is parked for now (user decision).** Code is dormant: checkout returns "not configured", webhook returns "not configured" — no cost/side effects. Provider decision: **Paddle** (MoR, global; iyzico unnecessary for now since its installment advantage is weak for low-ticket B2B; Stripe can't be opened with a Turkey-based legal entity). iyzico only if TR becomes the main low-ticket channel — the architecture (`subscriptions` + `planFor`) is provider-agnostic; adding it = 1 webhook + 1 checkout.
 
-## Açık kararlar (varsayılanla ilerlenebilir)
+Code is complete and verified (typecheck/lint/test green, pages browsed). **To activate, Paddle sandbox setup is needed** (SETUP.md Phase 1d): sandbox account → `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`, `NEXT_PUBLIC_PADDLE_ENV`; Starter/Pro products in the Catalog → 4 price IDs (`NEXT_PUBLIC_PADDLE_PRICE_*`); after deploy, webhook → `/api/webhooks/paddle`. Once env is set, checkout buttons and the subscription→plan flow work automatically.
 
-- Alan adı: `tenderlist.app` placeholder — karar verilince `EMAIL_FROM`/`NEXT_PUBLIC_APP_URL`/SEO güncellenir.
-- Fiyat USD-only, aylık+yıllık. Paddle canlı onayı haftalar sürebilir → site yayına girer girmez başvur.
-- AI özet/extraction worker'ının Anthropic'i gerçekten çağırdığı kurulumda teyit edilecek; eksikse 1d öncesi mini-görev.
+Done:
+
+- New deps: `@paddle/paddle-node-sdk`, `@paddle/paddle-js`.
+- `packages/config/src/pricing.ts` — Starter $19/mo·$190/yr, Pro $59/mo·$590/yr; 4 price IDs from env.
+- `packages/config/src/quota.ts` + `apps/web/src/server/quota.ts` — Redis `INCR`+TTL counters (`q:search:{uid}:{day}`, `q:detail`/`q:click:{uid}:{month}`).
+- `apps/web/src/app/[locale]/pricing/page.tsx` — 3 plans + comparison + monthly/annual + Paddle overlay. New i18n `pricing`.
+- `apps/web/src/app/api/webhooks/paddle/route.ts` — verify signature → `subscriptions` upsert.
+- Quota gates: ✅ `/go/[tenderId]` (click), ✅ `/search` (searchesPerDay + archiveDays). ⏸️ `/tenders/[slug]` (detailViews) **deferred on purpose** — a per-user gate would make the detail page dynamic and break ISR/SEO; to be handled later with a soft/client-side counter.
+- Entitlement enforcement: `aiSummaries`, `csvExport` (Pro), `eligibilityAi` (Pro).
+- `<UpgradePrompt>` + `/pricing` CTAs.
+- Email: `quota-hit.tsx` + `trial-payment-issue.tsx` templates + email-dispatch renderer.
+- Tests: `quota.test.ts`, Paddle webhook unit test, `entitlements.test.ts` extension.
+
+## Phase 1e — Polish/launch (code, in progress)
+
+- ✅ **SEO:** `sitemap.ts` (static + published tenders), `robots.ts`, `metadataBase` + hreflang/canonical, JSON-LD (Organization/WebSite+SearchAction on landing, BreadcrumbList on detail — **no JobPosting**). Verified in the browser.
+- ✅ **OG:** site-wide default + `tenders/[slug]/opengraph-image.tsx` (`next/og`); excluded from the intl middleware. Image verified.
+- ✅ **Legal + footer:** `/terms`, `/privacy`, `/takedown` (draft content, clearly marked) + a footer for discovery.
+- ✅ **Empty/error:** `[locale]/not-found.tsx`, `error.tsx`, root `global-error.tsx` (i18n) + dashboard/watchlist/alerts/detail `loading.tsx` skeletons.
+- ✅ **Programmatic SEO:** `/countries/[country]` + `/sectors/[sector]` (dynamic stats + list + FAQPage schema). **Guarded by the `NEXT_PUBLIC_SEO_LIVE` flag** — off by default; seed/sample data is not indexed and stays out of the sitemap. Set `true` once real data is live.
+- ✅ **Observability:** Sentry (web instrumentation + worker) + PostHog provider — all env-gated (activate once DSN/key is set, dormant now).
+- ✅ **Blog:** `/blog` + `/blog/[slug]` skeleton (data-driven, Article schema, noindex; later swap to MDX/CMS).
+- ✅ **Playwright smoke:** landing/search/detail/pricing public path (`pnpm --filter web test:e2e`). Auth-gated flows (Clerk test user) → follow-up.
+- ⏳ **Lighthouse:** run against a prod build after deploy (dev scores are misleading); target mobile >85.
+
+## Real data / scrapers (started — Jul 2026)
+
+Fake seed deleted. Scrapers run as **in-repo TS adapters** (`apps/worker/src/scrapers/`) via
+`backfill.ts` (for now a direct load bypassing the Redis queue, because the Upstash quota is
+exhausted). Rule: **only open AND published in the last ~7 days** (data stays fresh/small).
+
+| Source | Slug | Type | Status |
+|--------|------|------|--------|
+| TED (EU) | `ted-eu` | Official REST API | ✅ live (~44) |
+| Uganda eGP | `ug-egp` | Server-rendered HTML (cheerio) | ✅ live (~5) |
+| UNGM | `ungm` | Search POST → HTML rows (cheerio) | ✅ live (~14) |
+| Kenya PPIP | `ke-ppip` | Hidden JSON API `/api/active-tenders` | ✅ live (~148) |
+| Ethiopia eGP | `et-egp` | Hidden JSON API `cms-v2/get-grouped-sourcing` | ✅ live (~50) |
+
+**5/5 sources live** — ~261 real open tenders (last 7 days, future-dated dropped). The SPAs'
+(Kenya/Ethiopia) backend APIs were found, no headless needed. Rule: `apps/worker/src/scrapers/shared.ts`
+`isRecentAndOpen` (open + last 7 days + not future, with end-of-day grace).
+
+**Next big task — document extraction:** Tender info is often inside an attached **PDF/Word/image**.
+Needed: PDF text extraction + **OCR** for images → structured fields via AI (OpenRouter). Part of
+the AI worker phase.
+
+**Open work:** EU country centroids (for EU bubbles on the globe map) · worker+Redis scheduling
+for regular scraping (on deploy) · `sourceUrl` http/https validation.
+
+---
+
+## Map enhancement path (researched — Jul 2026)
+
+Current: MapLibre v5 **globe projection** (dark style, glowing blue bubbles, idle
+auto-rotation). Next candidates (by impact/effort):
+1. **Choropleth** — shade countries by tender density in blues (skill suggestion;
+   country borders GeoJSON + fill layer; legend required).
+2. **Click a country → fly-to + zoom** — clicking a bubble rotates the globe to that country.
+3. **Sector filter** — filter bubbles by sector on the map.
+4. **Value heatmap** — a heatmap layer using value_usd_est (meaningful once real data is in).
+5. **City level** — at zoom > 4, country bubbles split into city points (requires
+   real coordinate data → post-ingestion).
+
+## Open decisions (can proceed with defaults)
+
+- Domain: `tenderlist.app` placeholder — once decided, update `EMAIL_FROM`/`NEXT_PUBLIC_APP_URL`/SEO.
+- Pricing USD-only, monthly+annual. Paddle live approval can take weeks → apply as soon as the site is live.
+- Whether the AI summary/extraction worker actually calls Anthropic to be confirmed at setup; if missing, a mini-task before 1d.

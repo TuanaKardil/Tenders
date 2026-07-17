@@ -1,40 +1,40 @@
 # CLAUDE.md — Tenderlist
 
-Afrika-öncelikli global ihale (tender) keşif SaaS'ı. Çekirdek döngü:
-**kaydol → 3 dakikada alarm kur → işe yarar e-posta al → orijinal kaynağa tıkla.**
+Africa-first global tender discovery SaaS. Core loop:
+**sign up → set an alert in 3 minutes → get a useful email → click through to the original source.**
 
-## ⚠️ Önce oku
-- **Yol haritası + faz durumu:** [`docs/ROADMAP.md`](./docs/ROADMAP.md) — tek doğruluk kaynağı. Bir işe başlamadan buraya bak; faz/kurulum adımı bitince güncelle.
-- **Servis kurulum rehberi (hesaplar, anahtarlar):** [`docs/KURULUM.md`](./docs/KURULUM.md).
-- **Gizli anahtarlar sadece** `.env` ve `apps/web/.env.local`'e girer — asla git'e commit'lenmez.
+## ⚠️ Read first
+- **Roadmap + phase status:** [`docs/ROADMAP.md`](./docs/ROADMAP.md) — single source of truth. Check it before starting any work; update it when a phase/setup step is done.
+- **Service setup guide (accounts, keys):** [`docs/SETUP.md`](./docs/SETUP.md).
+- **Secret keys go only** in `.env` and `apps/web/.env.local` — never committed to git.
 
 ## Stack
 Next.js 15 App Router (TS strict) · Tailwind v4 · shadcn/ui · PostgreSQL (Supabase) + Drizzle ·
-Meilisearch · BullMQ + Redis (Upstash) · Clerk (auth) · Paddle (ödeme) · Resend (e-posta) ·
-next-intl (en varsayılan `/`, tr `/tr`) · Anthropic (AI özet/extraction) · PostHog + Sentry.
+Meilisearch · BullMQ + Redis (Upstash) · Clerk (auth) · Paddle (payments) · Resend (email) ·
+next-intl (en default `/`, tr `/tr`) · Anthropic (AI summary/extraction) · PostHog + Sentry.
 Deploy: Vercel (web) + Railway (worker).
 
-## Dizin haritası
+## Directory map
 ```
-apps/web        Next.js uygulaması (App Router, [locale] segmenti)
-apps/worker     BullMQ worker'ları (normalize, alert, email-dispatch, index-sync, ...)
-packages/config entitlements, pricing, quota, queue adları, search ayarları (@repo/config)
-packages/db     Drizzle şema + migrations + seed (@repo/db)
-packages/emails React Email şablonları (@repo/emails)
+apps/web        Next.js app (App Router, [locale] segment)
+apps/worker     BullMQ workers (normalize, alert, email-dispatch, index-sync, ...)
+packages/config entitlements, pricing, quota, queue names, search settings (@repo/config)
+packages/db     Drizzle schema + migrations + seed (@repo/db)
+packages/emails React Email templates (@repo/emails)
 ```
-Python scraper ayrı repoda; buradan tek temas noktası `POST /api/ingest` sözleşmesidir.
+The Python scraper lives in a separate repo; the only contact point here is the `POST /api/ingest` contract.
 
-## Komutlar
+## Commands
 ```
-pnpm dev            # tüm workspace (turbo)
-pnpm lint && pnpm typecheck && pnpm test   # CI ile aynı; commit öncesi çalıştır
-pnpm db:migrate     # DIRECT_URL (5432) ile migration
-pnpm db:seed        # 200 sahte ihale
-cd apps/worker && pnpm exec tsx src/scripts/meili-setup.ts --reindex   # Meili ayar + reindex
+pnpm dev            # whole workspace (turbo)
+pnpm lint && pnpm typecheck && pnpm test   # same as CI; run before committing
+pnpm db:migrate     # migration via DIRECT_URL (5432)
+pnpm db:seed        # 200 fake tenders
+cd apps/worker && pnpm exec tsx src/scripts/meili-setup.ts --reindex   # Meili settings + reindex
 ```
-Lokal dev stack (brew): postgres@17 :5433 · redis :6379 · meilisearch :7700 — detay KURULUM.md.
+Local dev stack (brew): postgres@17 :5433 · redis :6379 · meilisearch :7700 — details in SETUP.md.
 
-## Konvansiyonlar
-- Kod, yorum ve commit mesajları **İngilizce**; kullanıcıyla iletişim Türkçe.
-- Entitlement/plan mantığı tek kaynak: `packages/config/src/entitlements.ts`. Yeni gate eklerken oradan oku.
-- Public sayfalar ISR; tüm `/search` param'ları noindex. Tender'larda **asla** JobPosting schema'sı kullanma.
+## Conventions
+- Code, comments and commit messages in **English**; communication with the user in Turkish.
+- Single source for entitlement/plan logic: `packages/config/src/entitlements.ts`. Read from there when adding a new gate.
+- Public pages use ISR; all `/search` params are noindex. **Never** use JobPosting schema on tenders.

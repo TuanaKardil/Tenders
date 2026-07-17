@@ -1,161 +1,161 @@
-# Tenderlist — İhale İşleme Pipeline'ı (scrape → publish)
+# Tenderlist — Tender Processing Pipeline (scrape → publish)
 
-> Bu dosya, bir ihale çekildikten sonra yayınlanana kadar geçen tüm adımların
-> tasarımıdır. Karar kaynağıdır; unutmamak için burada tutulur.
-> İlgili: [`ROADMAP.md`](./ROADMAP.md).
+> This file is the design of every step from when a tender is scraped until it is published.
+> It is a decision record; kept here so it isn't forgotten.
+> Related: [`ROADMAP.md`](./ROADMAP.md).
 
-## Günlük akış (özet)
+## Daily flow (summary)
 
 ```
 CRON ~12:00
-  → 1. Scrape (5 kaynak)
-  → 2. Normalize (aynı-kaynak dedup)
-  → 3. ⭐ Cross-source dedup — KATMAN 1 (ucuz, AI'dan ÖNCE)
-         ├─ kopya  → kümeye bağla, kaynak linki ekle, AI'ı ATLA (ucuz)
-         └─ yeni   ↓
-  → 4. Belge indir + PDF/Word/OCR metin çıkarımı
-  → 5. AI alan çıkarımı + ⭐ SINIFLANDIRMA (ihale mi?)
-         ├─ ihale değil (iş ilanı/award/disposal/haber) → ELE
-         └─ ihale ↓
-  → 6. AI çeviri + ÖZET (EN+TR)
-  → 7. ⭐ Cross-source dedup — KATMAN 2 (embedding + LLM-hakem)
+  → 1. Scrape (5 sources)
+  → 2. Normalize (same-source dedup)
+  → 3. ⭐ Cross-source dedup — TIER 1 (cheap, BEFORE AI)
+         ├─ duplicate → attach to cluster, add source link, SKIP AI (cheap)
+         └─ new       ↓
+  → 4. Download documents + PDF/Word/OCR text extraction
+  → 5. AI field extraction + ⭐ CLASSIFICATION (is it a tender?)
+         ├─ not a tender (job posting/award/disposal/news) → DROP
+         └─ tender ↓
+  → 6. AI translate + SUMMARY (EN+TR)
+  → 7. ⭐ Cross-source dedup — TIER 2 (embedding + LLM judge)
   → 8. Publish gate (extraction_confidence ≥ 0.7)
-  → 9. Meili index (küme başına TEK kanonik)
-  → 10. Alarm eşleştir
-  → 11. E-posta (Resend)
-  → 12. Durum tazeleme (open/closing_soon/closed)
+  → 9. Meili index (ONE canonical per cluster)
+  → 10. Alert match
+  → 11. Email (Resend)
+  → 12. Status refresh (open/closing_soon/closed)
 ```
 
 ---
 
-## Aşama aşama
+## Stage by stage
 
-### 0. Zamanlayıcı — `schedules` · 🟡 iskele
-Her gün ~12:00'de tekrarlayan BullMQ job; 5 aktif kaynak için scrape işi kuyruğa atar.
+### 0. Scheduler — `schedules` · 🟡 scaffold
+A repeatable BullMQ job every day ~12:00; enqueues a scrape job for each of the 5 active sources.
 
-### 1. Scrape — `apps/worker/src/scrapers/` · ✅ kurulu
-Her adapter **açık + son 7 gün** ihaleleri çeker (`isRecentAndOpen`, gelecek-tarihli elenir).
-Kaynaklar: TED (API), Kenya (`/api/active-tenders`), Etiyopya (`cms-v2/get-grouped-sourcing`),
-Uganda (HTML), UNGM (arama HTML). → `/api/ingest` → `raw_notices`.
+### 1. Scrape — `apps/worker/src/scrapers/` · ✅ built
+Each adapter fetches **open + last 7 days** tenders (`isRecentAndOpen`, future-dated dropped).
+Sources: TED (API), Kenya (`/api/active-tenders`), Ethiopia (`cms-v2/get-grouped-sourcing`),
+Uganda (HTML), UNGM (search HTML). → `/api/ingest` → `raw_notices`.
 
-### 2. Normalize — `normalize` worker · ✅ kurulu
-`raw_notice` → `tenders` upsert. Aynı-kaynak dedup: (kaynak + notice_id) + `source_hash`.
-Aynı hash → dokunma; değişmiş → devam.
+### 2. Normalize — `normalize` worker · ✅ built
+`raw_notice` → `tenders` upsert. Same-source dedup: (source + notice_id) + `source_hash`.
+Same hash → untouched; changed → continue.
 
-### 3. Cross-source dedup — KATMAN 1 (deterministik, ucuz) · 🔴 yeni · `dedupe` worker
-Aynı ihale 3 farklı sitede olabilir (UN/Dünya Bankası fonlu olanlar sık). AI'dan ÖNCE elenir
-ki kopyalar pahalı AI'ya girmesin.
-- **Blok:** `ülke + kapanış tarihi (±2 gün)` (O(n²)'den kaçış)
-- **Skor:** normalize referans no (en güçlü) + alıcı adı benzerliği (token/Jaccard) + değer +
-  başlık trigram
-- Eşik geçerse → aynı **küme** (`dedupe_clusters`, şemada var). Kopya → kümeye bağla, kaynak
-  linkini ekle, **AI'ı atla**.
+### 3. Cross-source dedup — TIER 1 (deterministic, cheap) · 🔴 new · `dedupe` worker
+The same tender can appear on 3 different sites (UN/World Bank-funded ones often do). Filtered
+BEFORE AI so duplicates don't hit the expensive AI.
+- **Block:** `country + closing date (±2 days)` (avoids O(n²))
+- **Score:** normalized reference no (strongest) + buyer-name similarity (token/Jaccard) + value +
+  title trigram
+- Over the threshold → same **cluster** (`dedupe_clusters`, already in the schema). Duplicate →
+  attach to the cluster, add the source link, **skip AI**.
 
-### 4. Belge indir + çıkarım (PDF/Word/görsel) · 🔴 yeni · `extract` worker
-**Çoğu ilanın asıl bilgisi ekli belgede.** Adım:
-- Ekleri indir (`documents[].url`)
-- **PDF → metin** (pdf-parse / pdfjs)
-- **Word → metin** (docx parser)
-- **Görsel / taranmış PDF → OCR** (tesseract.js, ya da Gemini'nin görsel-okuma yeteneği)
-- Çıkan ham metin 5. adımdaki AI'ya girdi olur. (Not: Gemini multimodal olduğundan PDF/görseli
-  doğrudan modele verip hem metin çıkarımı hem özet tek çağrıda yapılabilir — maliyet/gecikme
-  testine göre seçilecek.)
+### 4. Download documents + extraction (PDF/Word/image) · 🔴 new · `extract` worker
+**Most notices' real information is in the attached document.** Steps:
+- Download attachments (`documents[].url`)
+- **PDF → text** (pdf-parse / pdfjs)
+- **Word → text** (docx parser)
+- **Image / scanned PDF → OCR** (tesseract.js, or Gemini's image-reading ability)
+- The resulting raw text becomes input to the AI in stage 5. (Note: because Gemini is multimodal,
+  the PDF/image can be fed directly to the model to do both text extraction and summary in a
+  single call — to be chosen based on a cost/latency test.)
 
-### 5. AI alan çıkarımı + SINIFLANDIRMA · 🔴 yeni · `extract` worker
-Başlık + açıklama + belge metni → AI:
-- **Yapılandırılmış alanlar:** alıcı, son tarih, tahmini bedel, para birimi, sektör, CPV,
-  uygunluk şartları, ihale türü + **güven skoru**.
-- **SINIFLANDIRMA (ihale mi?):** "Açık ihale mi (alıcı tedarikçi/yüklenici arıyor), yoksa iş
-  ilanı / kazanan (award) / varlık satışı (disposal) / haber mi?"
-  - Ucuz ön-filtre: `notice_type` enum'u (sadece tender/rfp/rfq/eoi/prequalification al;
-    award/cancellation/disposal/vacancy ele). Uganda'da "Disposal" sütununu alma.
-  - AI teyidi: belirsizler için. "İhale değil" → **ELE, yayınlama.**
+### 5. AI field extraction + CLASSIFICATION · 🔴 new · `extract` worker
+Title + description + document text → AI:
+- **Structured fields:** buyer, deadline, estimated value, currency, sector, CPV,
+  eligibility terms, notice type + a **confidence score**.
+- **CLASSIFICATION (is it a tender?):** "Is this an open tender (a buyer looking for a
+  supplier/contractor), or a job posting / award / asset disposal / news?"
+  - Cheap pre-filter: the `notice_type` enum (keep only tender/rfp/rfq/eoi/prequalification;
+    drop award/cancellation/disposal/vacancy). Don't take Uganda's "Disposal" column.
+  - AI confirmation: for ambiguous ones. "Not a tender" → **DROP, don't publish.**
 
-### 6. AI çeviri + ÖZET (EN+TR) · 🔴 yeni · `translate-summarize` worker
-- `title_en/tr`, `summary_en/tr` üretir. **Her ihale sayfasında AI özeti bundan gelir.**
-- (Bu, TR aramayı da açar — şu an İngilizce içerik TR aramada çıkmıyor.)
-- **Model: Gemini 2.5 Flash-Lite** (özet için — çok ucuz, yüksek hacme uygun; kurucu tercihi).
+### 6. AI translate + SUMMARY (EN+TR) · 🔴 new · `translate-summarize` worker
+- Produces `title_en/tr`, `summary_en/tr`. **The AI summary on every tender page comes from this.**
+- (This also unlocks TR search — right now English content doesn't show in TR search.)
+- **Model: Gemini 2.5 Flash-Lite** (for summaries — very cheap, suited to high volume; founder's choice).
 
-### 7. Cross-source dedup — KATMAN 2 (anlamsal) · 🔴 yeni
-Katman 1'in kaçırdığı (dili/formatı çok farklı) kopyalar için:
-- `alıcı | başlık | ülke | deadline` embedding'i (pgvector'da)
-- Aynı blokta yüksek kosinüs benzerliği → aday; **0.75–0.90 arası → LLM-hakem** ("aynı mı?")
-- Aynıysa → kümeleri birleştir, fazlalığı yayından çek.
+### 7. Cross-source dedup — TIER 2 (semantic) · 🔴 new
+For duplicates Tier 1 missed (very different language/format):
+- Embedding of `buyer | title | country | deadline` (in pgvector)
+- High cosine similarity in the same block → candidate; **0.75–0.90 → LLM judge** ("same one?")
+- If the same → merge clusters, unpublish the redundant one.
 
-### 8. Publish gate — `publish-gate` · ✅ mantık kurulu
+### 8. Publish gate — `publish-gate` · ✅ logic built
 - `extraction_confidence ≥ 0.7` → **publish** (`is_published = true`)
-- `< 0.7` → **admin inceleme kuyruğu** (`/admin`), elle onay.
-- Küme başına **tek kanonik** yayınlanır (kanonik = ülkesiyle uyumlu ulusal portal > en çok
-  belge/en yüksek quality_score; diğerleri "ayna").
+- `< 0.7` → **admin review queue** (`/admin`), manual approval.
+- **One canonical** per cluster is published (canonical = national portal matching the country >
+  most documents/highest quality_score; the others are "mirrors").
 
-### 9. Meili index — `index-sync` worker · ✅ kurulu
-Kanonik yayınlanan ihale Meili'ye → sitede aranabilir. Kapanan/yayından çıkan silinir.
+### 9. Meili index — `index-sync` worker · ✅ built
+The canonical published tender goes to Meili → searchable on the site. Closed/unpublished ones are removed.
 
-### 10. Alarm eşleştir — `alert-match` worker · ✅ kurulu
-Yeni ihale ↔ kullanıcı kayıtlı aramaları. Eşleşme + frekans (anlık/günlük/haftalık) →
-e-posta işi. (Kullanıcı küme başına **1 kez** uyarılır.)
+### 10. Alert match — `alert-match` worker · ✅ built
+New tender ↔ users' saved searches. Match + frequency (instant/daily/weekly) →
+email job. (A user is alerted **once** per cluster.)
 
-### 11. E-posta — `email-dispatch` worker · ✅ kurulu (Resend anahtarı bekliyor)
-Resend ile digest e-posta. → Çekirdek döngü tamam.
+### 11. Email — `email-dispatch` worker · ✅ built (awaiting Resend key)
+Digest email via Resend. → Core loop complete.
 
-### 12. Durum tazeleme — `status-refresh` worker · ✅ kurulu
-Günlük: son tarihe göre open → closing_soon → closed; kapananları index'ten düşür.
-
----
-
-## AI katmanı — model ve görev tablosu (OpenRouter üzerinden)
-
-| Görev | Model | Not |
-|-------|-------|-----|
-| **İhale ÖZETİ (her sayfa)** | **Gemini 2.5 Flash-Lite** | Kurucu tercihi; çok ucuz, yüksek hacim |
-| Alan çıkarımı (JSON) | Gemini 2.5 Flash | Daha güçlü; düşük-güvende Pro'ya yükselt |
-| Çeviri EN↔TR | Gemini 2.5 Flash / Flash-Lite | |
-| Sınıflandırma (ihale mi?) | Flash-Lite | Ucuz, ikili karar |
-| Belge/görsel okuma (OCR) | Gemini multimodal **veya** tesseract.js | Test edilip seçilecek |
-| Dedup embedding | Gemini/OpenAI embeddings | pgvector'da saklanır |
-| Dedup LLM-hakem (sınırdakiler) | Flash | Sadece kararsız çiftler |
-
-`.env`: `OPENROUTER_API_KEY` hazır. `OPENROUTER_MODEL=google/gemini-2.5-flash` (özet için
-Flash-Lite'a ayarlanacak; görev başına model seçilebilir).
+### 12. Status refresh — `status-refresh` worker · ✅ built
+Daily: open → closing_soon → closed based on the deadline; drop closed ones from the index.
 
 ---
 
-## Belge (PDF/Word/görsel) çıkarımı — nasıl yapacağız
+## AI layer — model & task table (via OpenRouter)
 
-**Sorun:** Bazı ilanlarda asıl bilgi (kapsam, şartlar, son tarih) **ekli PDF/Word/görselde.**
+| Task | Model | Note |
+|------|-------|------|
+| **Tender SUMMARY (every page)** | **Gemini 2.5 Flash-Lite** | Founder's choice; very cheap, high volume |
+| Field extraction (JSON) | Gemini 2.5 Flash | Stronger; escalate to Pro on low confidence |
+| Translation EN↔TR | Gemini 2.5 Flash / Flash-Lite | |
+| Classification (is it a tender?) | Flash-Lite | Cheap, binary decision |
+| Document/image reading (OCR) | Gemini multimodal **or** tesseract.js | To be tested and chosen |
+| Dedup embedding | Gemini/OpenAI embeddings | Stored in pgvector |
+| Dedup LLM judge (borderline) | Flash | Only for undecided pairs |
 
-**Çözüm (4. + 6. adım):**
-1. Ekli belge URL'lerini al (`documents[]`).
-2. İndir → tür tespit (PDF / DOCX / JPG-PNG / taranmış-PDF).
-3. Metin çıkar:
-   - PDF (metin katmanlı) → `pdf-parse`/`pdfjs`
+`.env`: `OPENROUTER_API_KEY` ready. `OPENROUTER_MODEL=google/gemini-2.5-flash` (to be set to
+Flash-Lite for summaries; model can be chosen per task).
+
+---
+
+## Document (PDF/Word/image) extraction — how we'll do it
+
+**Problem:** In some notices the real information (scope, terms, deadline) is **in the attached PDF/Word/image.**
+
+**Solution (stages 4 + 6):**
+1. Get the attached document URLs (`documents[]`).
+2. Download → detect type (PDF / DOCX / JPG-PNG / scanned-PDF).
+3. Extract text:
+   - PDF (with text layer) → `pdf-parse`/`pdfjs`
    - DOCX → docx parser
-   - Görsel / taranmış PDF → **OCR** (tesseract.js) **veya** Gemini multimodal'a doğrudan ver
-4. Çıkan metni AI'ya ver → hem eksik yapılandırılmış alanları doldur, hem **özet** çıkar.
-5. Belge linkleri detay sayfasında listelenir (biz belgeyi barındırmayız, sadece linkleriz).
+   - Image / scanned PDF → **OCR** (tesseract.js) **or** feed directly to Gemini multimodal
+4. Feed the extracted text to the AI → fill missing structured fields and produce a **summary**.
+5. Document links are listed on the detail page (we never host documents, only link to them).
 
-**Karar noktası:** "OCR + ayrı AI" mi, yoksa "PDF/görseli doğrudan Gemini multimodal'a verip
-tek çağrıda özet+alan" mı — ilki daha kontrollü/ucuz, ikincisi daha basit. Hacim/maliyet
-testiyle seçilecek.
+**Decision point:** "OCR + separate AI" vs "feed the PDF/image directly to Gemini multimodal for
+summary+fields in one call" — the former is more controlled/cheap, the latter simpler. To be
+chosen with a volume/cost test.
 
 ---
 
-## İnşa durumu
+## Build status
 
-| Parça | Durum |
+| Piece | Status |
 |---|---|
-| Scrape (5 kaynak) · Normalize · Publish gate · Index · Alarm · E-posta · Status | ✅ |
-| Zamanlayıcı tetiği (12:00) | 🟡 iskele |
-| Cross-source dedup — Katman 1 (deterministik) | 🔴 |
-| Cross-source dedup — Katman 2 (embedding + LLM) + pgvector | 🔴 |
-| Sınıflandırma kapısı (ihale mi?) | 🔴 |
-| Belge indir + PDF/Word/OCR | 🔴 |
-| AI alan çıkarımı | 🔴 |
-| AI çeviri + özet (Flash-Lite) | 🔴 |
-| Kanonik seçim + "ayrıca şurada" UI | 🔴 |
+| Scrape (5 sources) · Normalize · Publish gate · Index · Alert · Email · Status | ✅ |
+| Scheduler trigger (12:00) | 🟡 scaffold |
+| Cross-source dedup — Tier 1 (deterministic) | 🔴 |
+| Cross-source dedup — Tier 2 (embedding + LLM) + pgvector | 🔴 |
+| Classification gate (is it a tender?) | 🔴 |
+| Download documents + PDF/Word/OCR | 🔴 |
+| AI field extraction | 🔴 |
+| AI translate + summary (Flash-Lite) | 🔴 |
+| Canonical selection + "also listed on" UI | 🔴 |
 
-**Asıl inşa edilecek "AI beyni":** belge/OCR → çıkarım+sınıflandırma → çeviri+özet, artı
-iki dedup katmanı. Gerisi hazır ve gerçek veriyle test edildi (~254 canlı ihale).
+**The main thing to build — the "AI brain":** document/OCR → extraction+classification →
+translation+summary, plus the two dedup tiers. The rest is built and tested with real data (~254 live tenders).
 
-**Operasyonel:** Düzenli çalışması için worker deploy (Railway) + Redis gerekli (Upstash
-kotası dolu; şimdilik backfill elle çalışıyor).
+**Operational:** For regular runs it needs a deployed worker (Railway) + Redis (Upstash quota
+exhausted; for now the backfill runs manually).
