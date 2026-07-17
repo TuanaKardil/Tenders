@@ -13,18 +13,22 @@ import {
   toDate,
 } from "../lib/normalize";
 import { fetchTed } from "../scrapers/ted";
+import { fetchUganda } from "../scrapers/uganda";
+import { fetchUngm } from "../scrapers/ungm";
 
 /** The five real sources we start with. Only `ted-eu` is wired to a scraper yet. */
 const REAL_SOURCES = [
   { slug: "ted-eu", name: "TED — EU Tenders Electronic Daily", url: "https://ted.europa.eu", country: null, active: true },
+  { slug: "ug-egp", name: "Uganda eGP", url: "https://egpuganda.go.ug", country: "UG", active: true },
+  { slug: "ungm", name: "UN Global Marketplace", url: "https://www.ungm.org", country: null, active: true },
   { slug: "ke-ppip", name: "Kenya PPIP (tenders.go.ke)", url: "https://tenders.go.ke", country: "KE", active: false },
-  { slug: "ug-egp", name: "Uganda eGP", url: "https://egpuganda.go.ug", country: "UG", active: false },
   { slug: "et-egp", name: "Ethiopia eGP", url: "https://production.egp.gov.et", country: "ET", active: false },
-  { slug: "ungm", name: "UN Global Marketplace", url: "https://www.ungm.org", country: null, active: false },
 ] as const;
 
 const ADAPTERS: Record<string, () => Promise<IngestNotice[]>> = {
   "ted-eu": fetchTed,
+  "ug-egp": fetchUganda,
+  ungm: fetchUngm,
 };
 
 async function wipeFakeData() {
