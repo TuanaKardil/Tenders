@@ -71,10 +71,13 @@ Title + description + document text → AI:
     drop award/cancellation/disposal/vacancy). Don't take Uganda's "Disposal" column.
   - AI confirmation: for ambiguous ones. "Not a tender" → **DROP, don't publish.**
 
-### 6. AI translate + SUMMARY (EN+TR) · 🔴 new · `translate-summarize` worker
+### 6. AI translate + SUMMARY (EN+TR) · ✅ script (backfill), 🟡 queued worker
 - Produces `title_en/tr`, `summary_en/tr`. **The AI summary on every tender page comes from this.**
-- (This also unlocks TR search — right now English content doesn't show in TR search.)
+- (This also unlocked TR search — English content now shows in TR search.)
 - **Model: Gemini 2.5 Flash-Lite** (for summaries — very cheap, suited to high volume; founder's choice).
+- Built as a Redis-free direct script: `apps/worker/src/scripts/translate-summarize.ts` (via
+  `apps/worker/src/lib/ai.ts`, OpenRouter). Applied to all ~254 live tenders + Meili reindexed.
+  Still TODO: wire it as a BullMQ `translate-summarize` worker for the daily pipeline.
 
 ### 7. Cross-source dedup — TIER 2 (semantic) · 🔴 new
 For duplicates Tier 1 missed (very different language/format):
@@ -151,7 +154,7 @@ chosen with a volume/cost test.
 | Classification gate (is it a tender?) | 🔴 |
 | Download documents + PDF/Word/OCR | 🔴 |
 | AI field extraction | 🔴 |
-| AI translate + summary (Flash-Lite) | 🔴 |
+| AI translate + summary (Flash-Lite) | ✅ script (`translate-summarize.ts`); 🟡 as queued worker |
 | Canonical selection + "also listed on" UI | 🔴 |
 
 **The main thing to build — the "AI brain":** document/OCR → extraction+classification →

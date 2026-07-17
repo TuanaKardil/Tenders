@@ -50,7 +50,7 @@ Details + verification commands in [`docs/SETUP.md`](./SETUP.md). Secret keys go
 
 **Positioning:** The product is not Africa-specific — it's **global**; Africa is just the current seed sources. Landing/i18n/map copy updated from "Africa" → "global/world".
 
-**AI provider:** **OpenRouter** instead of Anthropic (OpenAI-compatible). `.env`: `OPENROUTER_API_KEY` + `OPENROUTER_MODEL=google/gemini-2.5-flash` (bulk translate/summarize/extract workhorse; can escalate low-confidence records to a stronger model). **The AI worker is not written yet** (extract/translate-summarize queues empty) — TR search depends on it.
+**AI provider:** **OpenRouter** instead of Anthropic (OpenAI-compatible). `.env`: `OPENROUTER_API_KEY` + `OPENROUTER_MODEL=google/gemini-2.5-flash`. **Translate + summarize done** (`apps/worker/src/scripts/translate-summarize.ts`, gemini-2.5-flash-lite): all ~254 live tenders now have `title_en/tr` + `summary_en/tr`, Meili reindexed, **TR search works**. Still 🔴: extraction, classification, OCR/PDF, dedup, and wiring these as BullMQ workers.
 
 **Trial findings (improvements):**
 - ✅ 🗺️ Map — `NEXT_PUBLIC_MAPTILER_KEY` added; tiles, borders and bubble→country panel work.
