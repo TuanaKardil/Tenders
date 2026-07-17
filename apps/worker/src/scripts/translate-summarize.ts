@@ -14,13 +14,25 @@ import { translateSummarize } from "../lib/ai";
 const args = process.argv.slice(2);
 const limit = Number(args.find((a) => /^\d+$/.test(a)) ?? 5) || 5;
 const dry = args.includes("--dry");
+const all = args.includes("--all"); // reprocess every tender, not just untranslated
+
+function isoDate(d: Date | null): string | null {
+  return d ? d.toISOString().slice(0, 10) : null;
+}
+
+function money(t: typeof tenders.$inferSelect): string | null {
+  if (t.valueUsdEst) return `~$${Math.round(Number(t.valueUsdEst)).toLocaleString("en-US")}`;
+  if (t.estimatedValueMax && t.currency)
+    return `${t.currency} ${Math.round(Number(t.estimatedValueMax)).toLocaleString("en-US")}`;
+  return null;
+}
 
 async function main() {
   const rows = await db
     .select({ t: tenders, source: sources })
     .from(tenders)
     .innerJoin(sources, eq(tenders.sourceId, sources.id))
-    .where(isNull(tenders.titleTr))
+    .where(all ? undefined : isNull(tenders.titleTr))
     .orderBy(desc(tenders.firstSeenAt))
     .limit(limit);
 
@@ -35,8 +47,15 @@ async function main() {
         language: t.languageOriginal,
         description: t.summaryEn,
         buyer: t.buyerNameRaw,
+        funder: t.funderName,
         country: t.country,
+        city: t.city,
         sector: t.sectorPrimary,
+        noticeType: t.noticeType,
+        method: t.procurementMethod,
+        deadline: isoDate(t.closingAt),
+        published: isoDate(t.publishedAt),
+        value: money(t),
       });
 
       console.log(`── [${source.slug}] ${t.country} (${t.languageOriginal})`);
