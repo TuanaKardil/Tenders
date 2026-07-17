@@ -1,7 +1,6 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db, tenders, sources } from "@repo/db";
 import { Link } from "@/i18n/navigation";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -13,24 +12,19 @@ import {
 
 export const dynamic = "force-dynamic";
 
-/** How many of the important optional fields are filled (a "completeness" gauge). */
-function completeness(t: typeof tenders.$inferSelect): number {
-  const checks = [
-    t.closingAt,
-    t.buyerNameRaw,
-    t.sectorPrimary,
-    t.valueUsdEst,
-    t.summaryEn,
-    t.publishedAt,
-    t.documentsCount > 0,
-    t.cpvCodes.length > 0,
-    t.region || t.city,
-  ];
-  return checks.filter(Boolean).length;
-}
+const LANG_TR: Record<string, string> = {
+  en: "İngilizce",
+  fr: "Fransızca",
+  pt: "Portekizce",
+  ar: "Arapça",
+  es: "İspanyolca",
+  tr: "Türkçe",
+};
 
-function pct(v: number | null): string {
-  return v === null ? "—" : `${Math.round(v * 100)}%`;
+function shortDate(d: Date | null): string {
+  return d
+    ? d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" })
+    : "—";
 }
 
 export default async function AdminTendersPage() {
@@ -38,86 +32,90 @@ export default async function AdminTendersPage() {
     .select({ t: tenders, sourceSlug: sources.slug })
     .from(tenders)
     .innerJoin(sources, eq(tenders.sourceId, sources.id))
-    .orderBy(desc(tenders.createdAt))
+    .orderBy(desc(tenders.firstSeenAt))
     .limit(200);
+
+  // Kaynak başına toplam (özet şerit)
+  const perSource = await db
+    .select({ slug: sources.slug, n: sql<number>`count(*)::int` })
+    .from(tenders)
+    .innerJoin(sources, eq(tenders.sourceId, sources.id))
+    .groupBy(sources.slug)
+    .orderBy(sql`count(*) desc`);
 
   return (
     <div>
-      <div className="mb-6 flex items-baseline justify-between">
-        <h1 className="text-xl font-semibold">Tenders</h1>
-        <span className="text-sm text-neutral-500">
-          latest {rows.length} · tracking extraction quality
-        </span>
+      <div className="mb-1 flex items-baseline justify-between">
+        <h1 className="text-xl font-semibold">İhaleler — kaynaktan gelen ham veri</h1>
+        <span className="text-sm text-neutral-500">son {rows.length} ihale</span>
       </div>
+      <p className="mb-4 text-sm text-neutral-500">
+        Her satır, ihalenin kaynağından geldiği <b>ham/orijinal</b> haliyle gösterilir (AI çevirisi/özeti öncesi).
+      </p>
+
+      {/* Kaynak başına toplam */}
+      <div className="mb-5 flex flex-wrap gap-2">
+        {perSource.map((s) => (
+          <span
+            key={s.slug}
+            className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs text-neutral-700"
+          >
+            {s.slug} · <b>{s.n}</b>
+          </span>
+        ))}
+      </div>
+
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Source</TableHead>
-              <TableHead>Country</TableHead>
-              <TableHead>Lang</TableHead>
-              <TableHead>EN / TR</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Conf.</TableHead>
-              <TableHead>Qual.</TableHead>
-              <TableHead>Fields</TableHead>
-              <TableHead>Pub.</TableHead>
+              <TableHead>İhale (orijinal başlık)</TableHead>
+              <TableHead>Kaynak</TableHead>
+              <TableHead>Orijinal dil</TableHead>
+              <TableHead>Ülke</TableHead>
+              <TableHead>Kaynak referans no</TableHead>
+              <TableHead>Alıcı (ham)</TableHead>
+              <TableHead>Son teklif tarihi</TableHead>
+              <TableHead>Belge</TableHead>
+              <TableHead>Çekilme</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="py-10 text-center text-neutral-500">
-                  No tenders yet.
+                <TableCell colSpan={9} className="py-10 text-center text-neutral-500">
+                  Henüz ihale yok.
                 </TableCell>
               </TableRow>
             )}
-            {rows.map(({ t, sourceSlug }) => {
-              const lowConf = (t.extractionConfidence ?? 1) < 0.7;
-              return (
-                <TableRow key={t.id} className={lowConf ? "bg-amber-50/50" : undefined}>
-                  <TableCell className="max-w-[280px]">
-                    <Link
-                      href={`/admin/tenders/${t.id}`}
-                      className="line-clamp-1 font-medium text-neutral-900 hover:underline"
-                    >
-                      {t.titleEn ?? t.titleOriginal}
-                    </Link>
-                    <div className="line-clamp-1 text-xs text-neutral-400">{t.slug}</div>
-                  </TableCell>
-                  <TableCell className="text-xs">{sourceSlug}</TableCell>
-                  <TableCell>{t.country}</TableCell>
-                  <TableCell className="uppercase">{t.languageOriginal}</TableCell>
-                  <TableCell className="text-xs">
-                    <span className={t.titleEn ? "text-emerald-600" : "text-neutral-300"}>
-                      EN
-                    </span>{" "}
-                    /{" "}
-                    <span className={t.titleTr ? "text-emerald-600" : "text-neutral-300"}>
-                      TR
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{t.status}</Badge>
-                  </TableCell>
-                  <TableCell className={lowConf ? "font-medium text-amber-700" : undefined}>
-                    {pct(t.extractionConfidence)}
-                  </TableCell>
-                  <TableCell>{pct(t.qualityScore)}</TableCell>
-                  <TableCell className="text-xs text-neutral-500">
-                    {completeness(t)}/9
-                  </TableCell>
-                  <TableCell>
-                    {t.isPublished ? (
-                      <span className="text-emerald-600">✓</span>
-                    ) : (
-                      <span className="text-neutral-300">✗</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {rows.map(({ t, sourceSlug }) => (
+              <TableRow key={t.id}>
+                <TableCell className="max-w-[280px]">
+                  <Link
+                    href={`/admin/tenders/${t.id}`}
+                    className="line-clamp-2 font-medium text-neutral-900 hover:underline"
+                  >
+                    {t.titleOriginal}
+                  </Link>
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-xs font-medium">{sourceSlug}</TableCell>
+                <TableCell className="whitespace-nowrap text-sm">
+                  {LANG_TR[t.languageOriginal] ?? t.languageOriginal.toUpperCase()}
+                </TableCell>
+                <TableCell>{t.country}</TableCell>
+                <TableCell className="max-w-[160px] truncate font-mono text-xs text-neutral-500">
+                  {t.sourceNoticeId}
+                </TableCell>
+                <TableCell className="max-w-[180px] truncate text-xs text-neutral-600">
+                  {t.buyerNameRaw ?? "—"}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-sm">{shortDate(t.closingAt)}</TableCell>
+                <TableCell className="text-center text-sm">{t.documentsCount}</TableCell>
+                <TableCell className="whitespace-nowrap text-xs text-neutral-500">
+                  {shortDate(t.firstSeenAt)}
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </div>

@@ -5,9 +5,10 @@ import { getCurrentUser } from "@/server/auth";
 export const dynamic = "force-dynamic";
 
 const NAV = [
-  { href: "/admin/tenders", label: "Tenders" },
-  { href: "/admin/sources", label: "Sources" },
-  { href: "/admin/runs", label: "Ingestion runs" },
+  { href: "/admin/coverage", label: "Kaynak kapsamı" },
+  { href: "/admin/tenders", label: "İhaleler" },
+  { href: "/admin/sources", label: "Kaynaklar" },
+  { href: "/admin/runs", label: "Çekim kayıtları" },
 ];
 
 export default async function AdminLayout({

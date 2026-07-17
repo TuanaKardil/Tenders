@@ -68,7 +68,7 @@ export default async function AdminTenderDetail({
       <div className="flex items-start justify-between gap-4">
         <div>
           <Link href="/admin/tenders" className="text-sm text-neutral-500 hover:underline">
-            ← Tenders
+            ← İhaleler
           </Link>
           <h1 className="mt-1 text-lg font-semibold text-neutral-900">
             {t.titleEn ?? t.titleOriginal}
@@ -76,16 +76,16 @@ export default async function AdminTenderDetail({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Badge variant={t.isPublished ? "default" : "outline"}>
-            {t.isPublished ? "published" : "not published"}
+            {t.isPublished ? "yayında" : "yayında değil"}
           </Badge>
-          {lowConf && <Badge variant="destructive">review</Badge>}
+          {lowConf && <Badge variant="destructive">incelenmeli</Badge>}
           <a
             href={`/go/${t.id}`}
             target="_blank"
             rel="noopener"
             className="rounded-md border border-neutral-300 px-2.5 py-1 text-xs hover:bg-neutral-50"
           >
-            source ↗
+            kaynağa git ↗
           </a>
         </div>
       </div>
