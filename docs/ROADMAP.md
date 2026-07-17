@@ -104,11 +104,15 @@ Upstash kotası dolu). Kural: **sadece açık VE son ~7 günde yayınlanmış** 
 
 | Kaynak | Slug | Tip | Durum |
 |--------|------|-----|-------|
-| TED (AB) | `ted-eu` | Resmi REST API | ✅ **canlı** (44 açık ihale, 5 CPV kategorisi) |
-| Uganda eGP | `ug-egp` | Server-render HTML | ⏳ adapter (orta) |
-| UNGM | `ungm` | İç arama API | ⏳ adapter (orta) |
-| Kenya PPIP | `ke-ppip` | Laravel/Inertia SPA | ⏳ adapter (zor — gömülü JSON) |
-| Etiyopya eGP | `et-egp` | Angular SPA | ⏳ adapter (en zor — headless olabilir) |
+| TED (AB) | `ted-eu` | Resmi REST API | ✅ canlı (~44) |
+| Uganda eGP | `ug-egp` | Server-render HTML (cheerio) | ✅ canlı (~5) |
+| UNGM | `ungm` | Arama POST → HTML satır (cheerio) | ✅ canlı (~14) |
+| Kenya PPIP | `ke-ppip` | Gizli JSON API `/api/active-tenders` | ✅ canlı (~148) |
+| Etiyopya eGP | `et-egp` | Gizli JSON API `cms-v2/get-grouped-sourcing` | ✅ canlı (~50) |
+
+**5/5 kaynak canlı** — ~261 gerçek açık ihale (son 7 gün, gelecek-tarihli elenir). SPA'ların
+(Kenya/Etiyopya) arka API'leri bulundu, headless gerekmedi. Kural: `apps/worker/src/scrapers/shared.ts`
+`isRecentAndOpen` (açık + son 7 gün + gelecek değil, gün-sonu toleranslı).
 
 **Sonraki büyük iş — belge çıkarımı:** İhale bilgisi çoğu zaman ekli **PDF/Word/görselin
 içinde**. Gerekli: PDF metin çıkarımı + görsel için **OCR** → AI (OpenRouter) ile yapılandırılmış
