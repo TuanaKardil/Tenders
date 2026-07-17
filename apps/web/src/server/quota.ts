@@ -16,9 +16,14 @@ declare global {
 function getRedis(): Redis {
   const url = process.env.REDIS_URL;
   if (!url) throw new Error("REDIS_URL is not set");
+  // Fail FAST: quotas are non-critical and fail open (see consumeQuota). If Redis
+  // is unreachable or over quota, a command must reject quickly, not hang the page.
   return (globalThis.__quotaRedis ??= new Redis(url, {
-    maxRetriesPerRequest: null,
+    maxRetriesPerRequest: 1,
+    commandTimeout: 2000,
     enableReadyCheck: false,
+    enableOfflineQueue: false,
+    lazyConnect: false,
   }));
 }
 
