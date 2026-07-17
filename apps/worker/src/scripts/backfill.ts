@@ -15,20 +15,24 @@ import {
 import { fetchTed } from "../scrapers/ted";
 import { fetchUganda } from "../scrapers/uganda";
 import { fetchUngm } from "../scrapers/ungm";
+import { fetchKenya } from "../scrapers/kenya";
+import { fetchEthiopia } from "../scrapers/ethiopia";
 
 /** The five real sources we start with. Only `ted-eu` is wired to a scraper yet. */
 const REAL_SOURCES = [
   { slug: "ted-eu", name: "TED — EU Tenders Electronic Daily", url: "https://ted.europa.eu", country: null, active: true },
   { slug: "ug-egp", name: "Uganda eGP", url: "https://egpuganda.go.ug", country: "UG", active: true },
   { slug: "ungm", name: "UN Global Marketplace", url: "https://www.ungm.org", country: null, active: true },
-  { slug: "ke-ppip", name: "Kenya PPIP (tenders.go.ke)", url: "https://tenders.go.ke", country: "KE", active: false },
-  { slug: "et-egp", name: "Ethiopia eGP", url: "https://production.egp.gov.et", country: "ET", active: false },
+  { slug: "ke-ppip", name: "Kenya PPIP (tenders.go.ke)", url: "https://tenders.go.ke", country: "KE", active: true },
+  { slug: "et-egp", name: "Ethiopia eGP", url: "https://production.egp.gov.et", country: "ET", active: true },
 ] as const;
 
 const ADAPTERS: Record<string, () => Promise<IngestNotice[]>> = {
   "ted-eu": fetchTed,
   "ug-egp": fetchUganda,
   ungm: fetchUngm,
+  "ke-ppip": fetchKenya,
+  "et-egp": fetchEthiopia,
 };
 
 async function wipeFakeData() {

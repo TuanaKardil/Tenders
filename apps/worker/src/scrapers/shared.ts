@@ -40,10 +40,24 @@ export function parseDmy(value: string | undefined): string | undefined {
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
 }
 
+/** Parses "2026-07-20 10:00:00" (space-separated, treated as UTC), or undefined. */
+export function parseSpaceDateTime(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const d = new Date(`${value.trim().replace(" ", "T")}Z`);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
 /** Parses an ISO-ish date ("2026-07-17") safely, or undefined. */
 export function parseIsoDate(value: string | undefined): string | undefined {
   if (!value) return undefined;
   const d = new Date(value.trim().slice(0, 10));
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
+/** Parses any full ISO datetime ("2026-07-20T19:30:00+03:00") safely. */
+export function parseFullIso(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const d = new Date(value);
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
 }
 
@@ -65,7 +79,11 @@ export function isRecentAndOpen(
   if (Number.isNaN(closing) || closing <= now) return false;
   if (publishedIso) {
     const pub = new Date(publishedIso).getTime();
-    if (!Number.isNaN(pub) && pub < now - days * 86_400_000) return false;
+    if (!Number.isNaN(pub)) {
+      // Too old, or published in the future (some portals pre-date notices).
+      if (pub < now - days * 86_400_000) return false;
+      if (pub > now + 2 * 86_400_000) return false;
+    }
   }
   return true;
 }
