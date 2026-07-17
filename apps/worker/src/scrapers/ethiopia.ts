@@ -29,6 +29,16 @@ interface EtLot {
   method?: string;
   procuringEntity?: string;
   language?: string;
+  sourceId?: string;
+  sourceApplication?: string;
+}
+
+/** Deep-link to the specific lot: /egp/bids/{id}/{app}/{sourceId}/{method}. */
+function detailUrl(lot: EtLot): string {
+  const app = (lot.sourceApplication ?? "purchasing").toLowerCase();
+  const method = (lot.method ?? "open").toLowerCase();
+  if (lot.sourceId) return `${BASE}/egp/bids/${lot.id}/${app}/${lot.sourceId}/${method}`;
+  return `${BASE}/egp/bids/all`;
 }
 
 export async function fetchEthiopia(): Promise<IngestNotice[]> {
@@ -63,7 +73,7 @@ export async function fetchEthiopia(): Promise<IngestNotice[]> {
       out.push({
         source_slug: "et-egp",
         source_notice_id: ref,
-        source_url: `${BASE}/egp/bids/${lot.id}`,
+        source_url: detailUrl(lot),
         title: title.slice(0, 400),
         language: lot.language === "en" ? "en" : undefined,
         country: "ET",

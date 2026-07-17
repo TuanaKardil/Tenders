@@ -81,6 +81,8 @@ async function backfillSource(slug: string) {
   const inserted: (typeof tenders.$inferSelect)[] = [];
 
   for (const data of notices) {
+    // Drop notices with no resolved country — we don't show country-less tenders.
+    if (!data.country) continue;
     const closingAt = toDate(data.closing_at);
     const confidence = extractionConfidence(data);
     const [row] = await db
