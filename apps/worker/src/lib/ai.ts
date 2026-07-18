@@ -140,6 +140,53 @@ export async function classifyTender(input: ClassifyInput): Promise<ClassifyOutp
 }
 
 // ---------------------------------------------------------------------------
+// Notice-type learning — classify an unknown raw type label into the enum.
+
+export interface LearnedNoticeType {
+  enum: string;
+  confidence: number;
+  reasoning: string;
+}
+
+export async function learnNoticeType(
+  rawText: string,
+  sourceSlug: string,
+  language?: string | null
+): Promise<LearnedNoticeType> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error("OPENROUTER_API_KEY not set");
+
+  const res = await fetch(ENDPOINT, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: loadPrompt("notice-type-learn") },
+        {
+          role: "user",
+          content: JSON.stringify({
+            raw_label: rawText,
+            source_portal: sourceSlug,
+            language: language ?? undefined,
+          }),
+        },
+      ],
+    }),
+  });
+
+  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const content = json.choices?.[0]?.message?.content;
+  if (!content) throw new Error("empty AI response");
+  const p = JSON.parse(content) as { enum?: string; confidence?: number; reasoning_short?: string };
+  const conf = typeof p.confidence === "number" ? Math.min(1, Math.max(0, p.confidence)) : 0;
+  return { enum: p.enum ?? "unknown", confidence: conf, reasoning: p.reasoning_short ?? "" };
+}
+
+// ---------------------------------------------------------------------------
 // Dedup judge (PIPELINE.md stage 7, Tier 2) — are two notices the same tender?
 
 export interface JudgeNotice {

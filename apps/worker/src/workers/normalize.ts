@@ -2,7 +2,7 @@ import { Worker, type Job } from "bullmq";
 import { and, eq } from "drizzle-orm";
 import { db, rawNotices, tenders, sources } from "@repo/db";
 import { QUEUES, type NormalizeJob, ingestNoticeSchema } from "@repo/config";
-import { normalizeNoticeType } from "@repo/config/notice-type";
+import { createNoticeTypeResolver } from "../lib/notice-type-resolver";
 import { connection } from "../connection";
 import { enqueueIndexSync } from "../queues";
 import {
@@ -85,7 +85,8 @@ export async function processNormalizeJob(job: Job<NormalizeJob>) {
     funderName: data.funder_name ?? null,
     sectorPrimary: data.sector ?? null,
     cpvCodes: data.cpv_codes ?? [],
-    noticeType: normalizeNoticeType(data.notice_type, sourceSlug),
+    noticeType: await createNoticeTypeResolver()
+      .resolve(data.notice_type, sourceSlug, data.language),
     noticeTypeRaw: data.notice_type ?? null,
     procurementMethod: data.procurement_method ?? null,
     contractType: data.contract_type ?? null,

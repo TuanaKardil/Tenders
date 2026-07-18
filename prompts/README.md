@@ -12,6 +12,7 @@ files at runtime.
 | `document-ocr.md` | Transcribe raw text from an image or scanned/text-less PDF (verbatim, no translation). Only reached when pdf-parse/mammoth can't (images, scans) | google/gemini-2.5-flash | `apps/worker/src/scripts/extract-documents.ts` (PIPELINE.md stage 4) |
 | `field-extraction.md` | Structured fields (value, currency, sector, CPV, eligibility, notice type + confidence) from title + description + document text. Forbids guessing — missing fields stay null | google/gemini-2.5-flash-lite | `apps/worker/src/scripts/extract-fields.ts` (PIPELINE.md stage 5) |
 | `dedupe-judge.md` | Are two similar notices the SAME tender on two portals, or different tenders? Leans NO on doubt (never hide a real tender). Only pairs with embedding similarity ≥ 0.85 reach it | google/gemini-2.5-flash-lite | `apps/worker/src/scripts/dedupe-tier2.ts` (PIPELINE.md stage 7) |
+| `notice-type-learn.md` | Classify an unknown raw notice-type label (any language) into the canonical enum — feeds the self-growing dictionary. Confidence ≥ 0.8 becomes an active mapping; below goes to admin review (/admin/sozluk) | google/gemini-2.5-flash-lite | `apps/worker/src/lib/notice-type-resolver.ts` |
 
 _Upcoming (per `docs/PIPELINE.md`): `seo.md` (SEO copy)._
 

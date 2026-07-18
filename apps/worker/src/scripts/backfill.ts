@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
 import { db, tenders, sources } from "@repo/db";
 import { TENDERS_INDEX } from "@repo/config/search";
-import { normalizeNoticeType } from "@repo/config/notice-type";
 import type { IngestNotice } from "@repo/config/ingest";
+import { createNoticeTypeResolver } from "../lib/notice-type-resolver";
 import { getMeili } from "../meili";
 import { tenderToDoc } from "../lib/tender-doc";
 import {
@@ -18,14 +18,17 @@ import { fetchUganda } from "../scrapers/uganda";
 import { fetchUngm } from "../scrapers/ungm";
 import { fetchKenya } from "../scrapers/kenya";
 import { fetchEthiopia } from "../scrapers/ethiopia";
+import { fetchGuinea } from "../scrapers/guinea";
 
 /** The five real sources we start with. Only `ted-eu` is wired to a scraper yet. */
 const REAL_SOURCES = [
-  { slug: "ted-eu", name: "TED — EU Tenders Electronic Daily", url: "https://ted.europa.eu", country: null, active: true },
-  { slug: "ug-egp", name: "Uganda eGP", url: "https://egpuganda.go.ug", country: "UG", active: true },
-  { slug: "ungm", name: "UN Global Marketplace", url: "https://www.ungm.org", country: null, active: true },
-  { slug: "ke-ppip", name: "Kenya PPIP (tenders.go.ke)", url: "https://tenders.go.ke", country: "KE", active: true },
-  { slug: "et-egp", name: "Ethiopia eGP", url: "https://production.egp.gov.et", country: "ET", active: true },
+  { slug: "ted-eu", name: "TED — EU Tenders Electronic Daily", url: "https://ted.europa.eu", country: null, active: true, license: "green" },
+  { slug: "ug-egp", name: "Uganda eGP", url: "https://egpuganda.go.ug", country: "UG", active: true, license: "green" },
+  { slug: "ungm", name: "UN Global Marketplace", url: "https://www.ungm.org", country: null, active: true, license: "green" },
+  { slug: "ke-ppip", name: "Kenya PPIP (tenders.go.ke)", url: "https://tenders.go.ke", country: "KE", active: true, license: "green" },
+  { slug: "et-egp", name: "Ethiopia eGP", url: "https://production.egp.gov.et", country: "ET", active: true, license: "green" },
+  // Private notice gazette (commercial, HTML) — YELLOW: metadata only, no body text.
+  { slug: "gn-jao", name: "Guinée — Journal des Appels d'Offres (jaoguinee.com)", url: "https://www.jaoguinee.com", country: "GN", active: true, license: "yellow" },
 ] as const;
 
 const ADAPTERS: Record<string, () => Promise<IngestNotice[]>> = {
@@ -34,6 +37,7 @@ const ADAPTERS: Record<string, () => Promise<IngestNotice[]>> = {
   ungm: fetchUngm,
   "ke-ppip": fetchKenya,
   "et-egp": fetchEthiopia,
+  "gn-jao": fetchGuinea,
 };
 
 async function wipeFakeData() {
@@ -61,12 +65,18 @@ async function registerSources() {
         country: s.country,
         scraperKey: s.slug,
         isActive: s.active,
-        licenseClass: "green",
+        licenseClass: s.license,
       })
-      .onConflictDoUpdate({ target: sources.slug, set: { name: s.name, isActive: s.active } });
+      .onConflictDoUpdate({
+        target: sources.slug,
+        set: { name: s.name, isActive: s.active, licenseClass: s.license },
+      });
   }
   console.log(`  ${REAL_SOURCES.length} sources registered`);
 }
+
+// One resolver per process run — its mapping cache and AI-phrase cap span all sources.
+const noticeTypeResolver = createNoticeTypeResolver();
 
 async function backfillSource(slug: string) {
   const adapter = ADAPTERS[slug];
@@ -75,7 +85,14 @@ async function backfillSource(slug: string) {
   if (!source) throw new Error(`source ${slug} not registered`);
 
   console.log(`Fetching from ${slug}...`);
-  const notices = await adapter();
+  let notices: IngestNotice[];
+  try {
+    notices = await adapter();
+  } catch (err) {
+    // One unreachable portal must never sink the whole run (daily automation).
+    console.error(`  ✗ ${slug} fetch failed, skipping: ${(err as Error).message.slice(0, 120)}`);
+    return;
+  }
   console.log(`  ${notices.length} open + recent notices`);
 
   const now = new Date();
@@ -102,7 +119,7 @@ async function backfillSource(slug: string) {
         buyerNameRaw: data.buyer_name ?? null,
         sectorPrimary: data.sector ?? null,
         cpvCodes: data.cpv_codes ?? [],
-        noticeType: normalizeNoticeType(data.notice_type, source.slug),
+        noticeType: await noticeTypeResolver.resolve(data.notice_type, source.slug, data.language),
         noticeTypeRaw: data.notice_type ?? null,
         publishedAt: toDate(data.published_at),
         closingAt,
@@ -138,6 +155,16 @@ async function main() {
   for (const slug of Object.keys(ADAPTERS)) {
     await backfillSource(slug);
   }
+  // Dictionary learning report (AI-learned phrases from this run).
+  const r = noticeTypeResolver.report;
+  if (r.aiLearnedActive.length || r.aiPending.length) {
+    console.log(`\nNotice-type dictionary learned this run:`);
+    for (const l of r.aiLearnedActive)
+      console.log(`  ✓ active  [${l.source}] "${l.raw}" ⇒ ${l.enum} (conf ${l.confidence.toFixed(2)})`);
+    for (const l of r.aiPending)
+      console.log(`  ? pending [${l.source}] "${l.raw}" ⇒ ${l.enum}? (conf ${l.confidence.toFixed(2)}) → /admin/sozluk`);
+  }
+
   const total = await db.$count(tenders);
   console.log(`Done. tenders table now: ${total}`);
   process.exit(0);

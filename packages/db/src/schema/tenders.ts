@@ -13,7 +13,13 @@ import {
   vector,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
-import { tenderStatusEnum, dedupeMethodEnum, noticeTypeEnum } from "./enums";
+import {
+  tenderStatusEnum,
+  dedupeMethodEnum,
+  noticeTypeEnum,
+  mappingOriginEnum,
+  mappingStatusEnum,
+} from "./enums";
 import { sources, buyers } from "./sources";
 
 export const tenders = pgTable(
@@ -146,6 +152,33 @@ export const dedupeClusters = pgTable("dedupe_clusters", {
   memberCount: integer("member_count").notNull().default(1),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Self-growing notice-type dictionary. Raw source phrases → canonical enum.
+ * origin: 'static' (seeded from code), 'ai' (learned, confidence ≥ 0.8),
+ * 'human' (admin approved/corrected). status 'pending_review' rows are AI
+ * guesses below the confidence bar — they resolve to "unknown" until an admin
+ * decides, and the same phrase is never re-asked while pending.
+ */
+export const noticeTypeMappings = pgTable(
+  "notice_type_mappings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** null = general rule that applies to every source. */
+    sourceSlug: text("source_slug"),
+    /** Normalized (lowercase, single-space) raw phrase. */
+    rawText: text("raw_text").notNull(),
+    mappedEnum: noticeTypeEnum("mapped_enum").notNull(),
+    confidence: real("confidence"),
+    origin: mappingOriginEnum("origin").notNull(),
+    status: mappingStatusEnum("status").notNull().default("active"),
+    /** AI's one-line reasoning (helps the admin review). */
+    reasoning: text("reasoning"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("notice_type_mappings_uq").on(t.sourceSlug, t.rawText)]
+);
 
 /** Title+summary embedding per tender — Tier 2 dedup candidate generation. */
 export const tenderEmbeddings = pgTable("tender_embeddings", {

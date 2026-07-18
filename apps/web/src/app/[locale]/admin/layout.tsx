@@ -8,6 +8,7 @@ const NAV = [
   { href: "/admin/kapsam", label: "Kaynak kapsamı" },
   { href: "/admin/tenders", label: "İhaleler" },
   { href: "/admin/eleme", label: "Elenenler" },
+  { href: "/admin/sozluk", label: "Sözlük" },
   { href: "/admin/sources", label: "Kaynaklar" },
   { href: "/admin/runs", label: "Çekim kayıtları" },
 ];

@@ -62,6 +62,12 @@ export const alertDeliveryStatusEnum = pgEnum("alert_delivery_status", [
 
 export const dedupeMethodEnum = pgEnum("dedupe_method", ["hash", "fuzzy", "manual"]);
 
+/** Where a notice-type mapping came from. */
+export const mappingOriginEnum = pgEnum("mapping_origin", ["static", "ai", "human"]);
+
+/** Lifecycle of a notice-type mapping. */
+export const mappingStatusEnum = pgEnum("mapping_status", ["active", "pending_review"]);
+
 /** Canonical notice type — raw source text is normalized into this (see @repo/config/notice-type). */
 export const noticeTypeEnum = pgEnum("notice_type", [
   "tender",

@@ -14,16 +14,17 @@
 import { type NoticeType } from "./constants";
 
 /** Collapse whitespace + lowercase so dictionary keys are stable. */
-function norm(raw: string): string {
+export function normalizeNoticeTypeKey(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, " ");
 }
+const norm = normalizeNoticeTypeKey;
 
 /**
  * Per-source exact-match dictionaries. Keys are normalized (lowercase, single
  * spaces). Values seen in real data are marked; the rest are plausible values
  * from each portal's documented method list, mapped ahead of time.
  */
-const BY_SOURCE: Record<string, Record<string, NoticeType>> = {
+export const NOTICE_TYPE_STATIC_DICT: Record<string, Record<string, NoticeType>> = {
   // Ethiopia eGP — lot.method
   "et-egp": {
     open: "tender", // seen
@@ -166,7 +167,7 @@ export function normalizeNoticeType(
   if (!raw || !raw.trim()) return "unknown";
   const key = norm(raw);
 
-  const dict = BY_SOURCE[sourceSlug];
+  const dict = NOTICE_TYPE_STATIC_DICT[sourceSlug];
   if (dict && dict[key]) return dict[key];
 
   if (sourceSlug === "ted-eu") {
