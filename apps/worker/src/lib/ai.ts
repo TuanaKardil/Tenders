@@ -185,3 +185,96 @@ export async function extractTextFromDocument(buffer: Buffer, mime: string): Pro
   const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   return json.choices?.[0]?.message?.content?.trim() ?? "";
 }
+
+// ---------------------------------------------------------------------------
+// AI field extraction (PIPELINE.md stage 5) — structured fields from the
+// tender's title + description + extracted document text. The prompt forbids
+// guessing; missing fields come back null.
+
+export interface FieldInput {
+  title: string;
+  description?: string | null;
+  documentText?: string | null; // already concatenated + capped by the caller
+}
+
+export interface ExtractedFields {
+  estimated_value_min: number | null;
+  estimated_value_max: number | null;
+  currency: string | null;
+  sector_primary: string | null;
+  sectors_secondary: string[];
+  cpv_codes: string[];
+  eligibility_countries: string[];
+  eligibility_notes_en: string | null;
+  notice_type_ai: string | null;
+  extraction_confidence: number | null;
+}
+
+/** Token usage the caller uses to compute cost. */
+export interface FieldResult {
+  fields: ExtractedFields;
+  usage: { prompt_tokens: number; completion_tokens: number };
+}
+
+function num(v: unknown): number | null {
+  const n = typeof v === "string" ? Number(v.replace(/[^0-9.]/g, "")) : v;
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
+}
+function strArr(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && x.trim() !== "") : [];
+}
+
+export async function extractFields(input: FieldInput): Promise<FieldResult> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error("OPENROUTER_API_KEY not set");
+
+  const facts: Record<string, string> = { title: input.title };
+  if (input.description?.trim()) facts.description = input.description.trim();
+  if (input.documentText?.trim()) facts.document_text = input.documentText.trim();
+
+  const res = await fetch(ENDPOINT, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: loadPrompt("field-extraction") },
+        { role: "user", content: JSON.stringify(facts) },
+      ],
+    }),
+  });
+
+  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const json = (await res.json()) as {
+    choices?: { message?: { content?: string } }[];
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
+  const content = json.choices?.[0]?.message?.content;
+  if (!content) throw new Error("empty AI response");
+  const p = JSON.parse(content) as Record<string, unknown>;
+
+  const confidence = num(p.extraction_confidence);
+  return {
+    fields: {
+      estimated_value_min: num(p.estimated_value_min),
+      estimated_value_max: num(p.estimated_value_max),
+      currency: typeof p.currency === "string" && p.currency.trim() ? p.currency.trim().toUpperCase() : null,
+      sector_primary: typeof p.sector_primary === "string" && p.sector_primary.trim() ? p.sector_primary.trim() : null,
+      sectors_secondary: strArr(p.sectors_secondary),
+      cpv_codes: strArr(p.cpv_codes),
+      eligibility_countries: strArr(p.eligibility_countries).map((c) => c.toUpperCase()),
+      eligibility_notes_en:
+        typeof p.eligibility_notes_en === "string" && p.eligibility_notes_en.trim()
+          ? p.eligibility_notes_en.trim()
+          : null,
+      notice_type_ai: typeof p.notice_type_ai === "string" && p.notice_type_ai.trim() ? p.notice_type_ai.trim() : null,
+      extraction_confidence: confidence === null ? null : Math.min(1, Math.max(0, confidence)),
+    },
+    usage: {
+      prompt_tokens: json.usage?.prompt_tokens ?? 0,
+      completion_tokens: json.usage?.completion_tokens ?? 0,
+    },
+  };
+}

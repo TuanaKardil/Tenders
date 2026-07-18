@@ -1,0 +1,1 @@
+ALTER TABLE "tenders" ADD COLUMN "notice_type_ai" text;

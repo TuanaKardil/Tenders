@@ -52,18 +52,36 @@ export async function headSize(url: string): Promise<number | null> {
   }
 }
 
-/** Download with a 30s timeout and a 25 MB ceiling. Throws on failure/oversize. */
-export async function downloadDocument(url: string): Promise<Buffer> {
+function mb(bytes: number): string {
+  return `${(bytes / 1024 / 1024).toFixed(0)}MB`;
+}
+
+/**
+ * Download with a timeout and a size ceiling (both overridable for retries).
+ * Throws Errors with clear, specific reasons: "size limit: 154MB",
+ * "request timeout (60s)", "HTTP 404".
+ */
+export async function downloadDocument(
+  url: string,
+  opts: { maxBytes?: number; timeoutMs?: number } = {}
+): Promise<Buffer> {
+  const maxBytes = opts.maxBytes ?? MAX_BYTES;
+  const timeoutMs = opts.timeoutMs ?? DOWNLOAD_TIMEOUT_MS;
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), DOWNLOAD_TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(url, { headers: { "User-Agent": UA }, signal: ctrl.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const len = res.headers.get("content-length");
-    if (len && Number(len) > MAX_BYTES) throw new Error(`too large (${Number(len)} bytes)`);
+    if (len && Number(len) > maxBytes) throw new Error(`size limit: ${mb(Number(len))} > ${mb(maxBytes)}`);
     const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.byteLength > MAX_BYTES) throw new Error(`too large (${buf.byteLength} bytes)`);
+    if (buf.byteLength > maxBytes) throw new Error(`size limit: ${mb(buf.byteLength)} > ${mb(maxBytes)}`);
     return buf;
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error(`request timeout (${timeoutMs / 1000}s)`);
+    }
+    throw err;
   } finally {
     clearTimeout(timer);
   }

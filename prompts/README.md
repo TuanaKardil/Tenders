@@ -10,6 +10,7 @@ files at runtime.
 | `translate-summarize.md` | Translate titles + write plain-language summaries (EN+TR) | google/gemini-2.5-flash-lite | `apps/worker/src/scripts/translate-summarize.ts` (PIPELINE.md stage 6) |
 | `classification.md` | Is this an open tender (vs award/disposal/vacancy/news)? AI tier of the classification gate — only ambiguous notices reach it; clear cases are decided by cheap rules first | google/gemini-2.5-flash-lite | `apps/worker/src/scripts/classify.ts` (PIPELINE.md stage 5) |
 | `document-ocr.md` | Transcribe raw text from an image or scanned/text-less PDF (verbatim, no translation). Only reached when pdf-parse/mammoth can't (images, scans) | google/gemini-2.5-flash | `apps/worker/src/scripts/extract-documents.ts` (PIPELINE.md stage 4) |
+| `field-extraction.md` | Structured fields (value, currency, sector, CPV, eligibility, notice type + confidence) from title + description + document text. Forbids guessing — missing fields stay null | google/gemini-2.5-flash-lite | `apps/worker/src/scripts/extract-fields.ts` (PIPELINE.md stage 5) |
 
 _Upcoming (per `docs/PIPELINE.md`): `extraction.md` (structured fields from documents),
 `dedupe-judge.md` (same tender?), `seo.md` (SEO copy)._

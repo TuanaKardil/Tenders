@@ -59,6 +59,8 @@ export const tenders = pgTable(
     noticeType: noticeTypeEnum("notice_type"),
     /** Original source text (e.g. "Open Tender", "cn-standard"); kept so we can re-map. */
     noticeTypeRaw: text("notice_type_raw"),
+    /** Notice type the AI field-extraction confirmed; compared against notice_type. */
+    noticeTypeAi: text("notice_type_ai"),
     procurementMethod: text("procurement_method"),
     contractType: text("contract_type"),
 
