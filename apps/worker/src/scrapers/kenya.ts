@@ -17,6 +17,12 @@ const CATEGORY_SECTOR: Record<string, string> = {
   "non consultancy services": "consulting",
 };
 
+interface KeDocument {
+  url?: string;
+  description?: string;
+  type?: { description?: string };
+}
+
 interface KeTender {
   id: number;
   tender_ref?: string;
@@ -27,7 +33,26 @@ interface KeTender {
   pe?: { name?: string };
   procurement_method?: { title?: string };
   procurement_category?: { title?: string; code?: string };
-  documents?: unknown[];
+  documents?: KeDocument[];
+}
+
+/** Extension → file_type; used to tag attachments so extraction can route them. */
+function fileTypeFromUrl(url: string): string | undefined {
+  const m = url.toLowerCase().match(/\.([a-z0-9]{2,5})(?:\?|#|$)/);
+  return m ? m[1] : undefined;
+}
+
+/** Map Kenya's documents[] to ingest attachments (relative → absolute URL). */
+function keDocuments(docs: KeDocument[] | undefined) {
+  if (!docs?.length) return undefined;
+  const out = docs
+    .map((d) => {
+      if (!d.url) return null;
+      const url = d.url.startsWith("http") ? d.url : `${BASE}${d.url.startsWith("/") ? "" : "/"}${d.url}`;
+      return { title: d.description || d.type?.description || undefined, url, file_type: fileTypeFromUrl(url) };
+    })
+    .filter((d): d is NonNullable<typeof d> => d !== null);
+  return out.length > 0 ? out : undefined;
 }
 
 export async function fetchKenya(): Promise<IngestNotice[]> {
@@ -71,6 +96,7 @@ export async function fetchKenya(): Promise<IngestNotice[]> {
         notice_type: r.procurement_method?.title || undefined,
         published_at: publishedIso,
         closing_at: closingIso,
+        documents: keDocuments(r.documents),
       });
     }
   }

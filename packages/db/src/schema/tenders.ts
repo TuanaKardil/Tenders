@@ -115,10 +115,17 @@ export const documents = pgTable(
       .notNull()
       .references(() => tenders.id, { onDelete: "cascade" }),
     title: text("title"),
-    /** Link only — documents are never hosted. */
+    /** Link only — the file itself is NEVER hosted; we keep only extracted text. */
     url: text("url").notNull(),
     fileType: text("file_type"),
     sizeBytes: integer("size_bytes"),
+    /** Full extracted text (never truncated); null until extraction runs. */
+    extractedText: text("extracted_text"),
+    /** How the text was obtained: pdf-parse | mammoth | gemini-multimodal | failed. */
+    extractionMethod: text("extraction_method"),
+    /** Failure reason when extraction_method = 'failed'. */
+    extractionError: text("extraction_error"),
+    extractedAt: timestamp("extracted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("documents_tender_idx").on(t.tenderId)]

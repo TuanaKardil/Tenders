@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db, tenders, sources } from "@repo/db";
 import { Link } from "@/i18n/navigation";
 import {

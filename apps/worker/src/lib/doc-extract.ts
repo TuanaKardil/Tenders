@@ -1,0 +1,102 @@
+import { PDFParse } from "pdf-parse";
+import mammoth from "mammoth";
+import { extractTextFromDocument } from "./ai";
+
+/**
+ * Document text extraction (PIPELINE.md stage 4). Download → extract text →
+ * the caller DELETES the file. We only ever keep the text, never the file.
+ *
+ *   PDF (text layer) → pdf-parse
+ *   PDF (scanned/empty) & images (PNG/JPG) → Gemini multimodal OCR
+ *   DOCX → mammoth
+ */
+
+export const MAX_BYTES = 25 * 1024 * 1024; // skip anything larger than 25 MB
+export const DOWNLOAD_TIMEOUT_MS = 30_000; // 30s per download
+
+const UA = "Mozilla/5.0 AppleWebKit/537.36 Chrome/120 Safari/537.36";
+
+export type FileKind = "pdf" | "docx" | "png" | "jpg";
+export type ExtractionMethod = "pdf-parse" | "mammoth" | "gemini-multimodal";
+
+/** Map a source file_type / URL extension onto a supported kind, or null to skip. */
+export function fileKind(fileType: string | null, url: string): FileKind | null {
+  const raw = (fileType || "").toLowerCase();
+  const ext = url.toLowerCase().match(/\.([a-z0-9]{2,5})(?:\?|#|$)/)?.[1] ?? "";
+  const t = raw || ext;
+  if (t.includes("pdf")) return "pdf";
+  if (t.includes("docx") || t.includes("wordprocessingml")) return "docx";
+  if (t.includes("png")) return "png";
+  if (t.includes("jpg") || t.includes("jpeg")) return "jpg";
+  return null; // .doc (legacy), xls, zip, etc. → skip
+}
+
+/** Which extraction path a kind takes before download (PDFs may still fall back to Gemini). */
+export function plannedMethod(kind: FileKind): ExtractionMethod {
+  if (kind === "docx") return "mammoth";
+  if (kind === "pdf") return "pdf-parse";
+  return "gemini-multimodal";
+}
+
+/** HEAD the URL to learn its byte size for the dry-run (best effort; null if unknown). */
+export async function headSize(url: string): Promise<number | null> {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), DOWNLOAD_TIMEOUT_MS);
+    const res = await fetch(url, { method: "HEAD", headers: { "User-Agent": UA }, signal: ctrl.signal });
+    clearTimeout(timer);
+    const len = res.headers.get("content-length");
+    return len ? Number(len) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Download with a 30s timeout and a 25 MB ceiling. Throws on failure/oversize. */
+export async function downloadDocument(url: string): Promise<Buffer> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), DOWNLOAD_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": UA }, signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const len = res.headers.get("content-length");
+    if (len && Number(len) > MAX_BYTES) throw new Error(`too large (${Number(len)} bytes)`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.byteLength > MAX_BYTES) throw new Error(`too large (${buf.byteLength} bytes)`);
+    return buf;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const MIME: Record<Exclude<FileKind, "pdf" | "docx">, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+};
+
+export interface ExtractResult {
+  text: string;
+  method: ExtractionMethod;
+}
+
+/** Extract text from an already-downloaded buffer. */
+export async function extractText(buffer: Buffer, kind: FileKind): Promise<ExtractResult> {
+  if (kind === "docx") {
+    const { value } = await mammoth.extractRawText({ buffer });
+    return { text: value.trim(), method: "mammoth" };
+  }
+
+  if (kind === "pdf") {
+    const parser = new PDFParse({ data: new Uint8Array(buffer) });
+    const result = await parser.getText();
+    const text = (result.text ?? "").trim();
+    if (text.length > 0) return { text, method: "pdf-parse" };
+    // No text layer → scanned PDF → hand it to Gemini.
+    const ocr = await extractTextFromDocument(buffer, "application/pdf");
+    return { text: ocr.trim(), method: "gemini-multimodal" };
+  }
+
+  // PNG / JPG → Gemini multimodal.
+  const ocr = await extractTextFromDocument(buffer, MIME[kind]);
+  return { text: ocr.trim(), method: "gemini-multimodal" };
+}

@@ -3,6 +3,8 @@ import { loadPrompt } from "./prompts";
 /** Minimal OpenRouter (OpenAI-compatible) client for translate + summarize. */
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash-lite";
+/** OCR / document reading uses the fuller Flash model (better at images/scans). */
+const MODEL_OCR = "google/gemini-2.5-flash";
 
 export interface TsInput {
   title: string;
@@ -135,4 +137,51 @@ export async function classifyTender(input: ClassifyInput): Promise<ClassifyOutp
     category: parsed.category ?? "tender",
     reason: parsed.reason ?? "",
   };
+}
+
+// ---------------------------------------------------------------------------
+// Document OCR (PIPELINE.md stage 4) — read text straight from an image or a
+// scanned/text-less PDF via Gemini's multimodal ability. Text-layer PDFs and
+// DOCX are handled locally (pdf-parse/mammoth); this is only the fallback.
+
+/** Build the OpenRouter content part for a document buffer. */
+function documentPart(buffer: Buffer, mime: string) {
+  const dataUrl = `data:${mime};base64,${buffer.toString("base64")}`;
+  if (mime === "application/pdf") {
+    // OpenRouter feeds PDFs to Gemini natively via a `file` part.
+    return { type: "file" as const, file: { filename: "document.pdf", file_data: dataUrl } };
+  }
+  return { type: "image_url" as const, image_url: { url: dataUrl } };
+}
+
+/**
+ * Extract raw text from an image (PNG/JPG) or a scanned PDF. Returns the
+ * transcribed text (may be empty if the document truly has none).
+ */
+export async function extractTextFromDocument(buffer: Buffer, mime: string): Promise<string> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error("OPENROUTER_API_KEY not set");
+
+  const res = await fetch(ENDPOINT, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL_OCR,
+      temperature: 0,
+      messages: [
+        { role: "system", content: loadPrompt("document-ocr") },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Transcribe every readable character in this document." },
+            documentPart(buffer, mime),
+          ],
+        },
+      ],
+    }),
+  });
+
+  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  return json.choices?.[0]?.message?.content?.trim() ?? "";
 }

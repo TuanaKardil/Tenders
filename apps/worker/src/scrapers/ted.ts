@@ -73,6 +73,16 @@ interface TedNotice {
   "place-of-performance"?: string[];
   "classification-cpv"?: string[];
   "notice-type"?: string;
+  links?: { pdf?: Record<string, string>; xml?: Record<string, string> };
+}
+
+/** The official notice PDF (prefer English) — TED's real content lives there. */
+function tedDocuments(links: TedNotice["links"], num: string) {
+  const pdf = links?.pdf;
+  if (!pdf) return undefined;
+  const url = pdf.ENG ?? pdf.eng ?? Object.values(pdf)[0];
+  if (!url) return undefined;
+  return [{ title: `TED notice ${num} (PDF)`, url, file_type: "pdf" }];
 }
 
 function pickLang(obj: Record<string, string | string[]> | undefined): string | undefined {
@@ -113,6 +123,7 @@ async function fetchPage(cpv: string, sinceIso: string): Promise<TedNotice[]> {
         "place-of-performance",
         "classification-cpv",
         "notice-type",
+        "links",
       ],
     }),
   });
@@ -167,6 +178,7 @@ export async function fetchTed(): Promise<IngestNotice[]> {
         notice_type: n["notice-type"] ?? undefined,
         published_at: safeIso(n["publication-date"]),
         closing_at: safeIso(deadline),
+        documents: tedDocuments(n.links, num),
       });
     }
   }
