@@ -27,7 +27,7 @@ export interface TsOutput {
   summary_tr: string;
 }
 
-// The prompt text lives in the repo-root PROMPTS.md (loaded at runtime).
+// The prompt text lives in the repo-root prompts/ folder (loaded at runtime).
 
 export async function translateSummarize(input: TsInput): Promise<TsOutput> {
   const key = process.env.OPENROUTER_API_KEY;
