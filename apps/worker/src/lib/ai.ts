@@ -140,6 +140,63 @@ export async function classifyTender(input: ClassifyInput): Promise<ClassifyOutp
 }
 
 // ---------------------------------------------------------------------------
+// Dedup judge (PIPELINE.md stage 7, Tier 2) — are two notices the same tender?
+
+export interface JudgeNotice {
+  title: string;
+  buyer?: string | null;
+  country: string;
+  closing?: string | null;
+  source?: string | null;
+  summary?: string | null;
+}
+
+export interface JudgeVerdict {
+  same_tender: boolean;
+  reason: string;
+}
+
+export async function judgeDuplicate(a: JudgeNotice, b: JudgeNotice): Promise<JudgeVerdict> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error("OPENROUTER_API_KEY not set");
+
+  const strip = (n: JudgeNotice) => ({
+    title: n.title,
+    buyer: n.buyer ?? undefined,
+    country: n.country,
+    closing: n.closing ?? undefined,
+    source_portal: n.source ?? undefined,
+    summary: n.summary?.slice(0, 400) ?? undefined,
+  });
+
+  const res = await fetch(ENDPOINT, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: loadPrompt("dedupe-judge") },
+        { role: "user", content: JSON.stringify({ notice_a: strip(a), notice_b: strip(b) }) },
+      ],
+    }),
+  });
+
+  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const content = json.choices?.[0]?.message?.content;
+  if (!content) throw new Error("empty AI response");
+  const parsed = JSON.parse(content) as Partial<JudgeVerdict>;
+  return {
+    // Lean towards NOT merging on malformed output (a duplicate shown twice
+    // beats a real tender hidden).
+    same_tender: parsed.same_tender === true,
+    reason: parsed.reason ?? "",
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Document OCR (PIPELINE.md stage 4) — read text straight from an image or a
 // scanned/text-less PDF via Gemini's multimodal ability. Text-layer PDFs and
 // DOCX are handled locally (pdf-parse/mammoth); this is only the fallback.

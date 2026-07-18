@@ -10,6 +10,7 @@ import {
   real,
   index,
   uniqueIndex,
+  vector,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { tenderStatusEnum, dedupeMethodEnum, noticeTypeEnum } from "./enums";
@@ -135,14 +136,50 @@ export const documents = pgTable(
 
 export const dedupeClusters = pgTable("dedupe_clusters", {
   id: uuid("id").primaryKey().defaultRandom(),
+  /** The tender shown to users (primary); other members stay hidden from search. */
   canonicalTenderId: uuid("canonical_tender_id").references(
     (): AnyPgColumn => tenders.id
   ),
   method: dedupeMethodEnum("method").notNull().default("hash"),
   confidence: real("confidence"),
   reviewedBy: text("reviewed_by"),
+  memberCount: integer("member_count").notNull().default(1),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Title+summary embedding per tender — Tier 2 dedup candidate generation. */
+export const tenderEmbeddings = pgTable("tender_embeddings", {
+  tenderId: uuid("tender_id")
+    .primaryKey()
+    .references(() => tenders.id, { onDelete: "cascade" }),
+  /** text-embedding-004 (Google AI), 768 dims. */
+  embedding: vector("embedding", { dimensions: 768 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Tier 2 judged pairs. status: 'merged' (auto), 'review' (judge said yes but
+ * similarity < 0.90 — needs a human), 'rejected' (judge said no; kept so
+ * re-runs don't re-judge the same pair).
+ */
+export const dedupeCandidates = pgTable(
+  "dedupe_candidates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenderAId: uuid("tender_a_id")
+      .notNull()
+      .references(() => tenders.id, { onDelete: "cascade" }),
+    tenderBId: uuid("tender_b_id")
+      .notNull()
+      .references(() => tenders.id, { onDelete: "cascade" }),
+    similarity: real("similarity").notNull(),
+    verdict: text("verdict"),
+    reason: text("reason"),
+    status: text("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("dedupe_candidates_pair_uq").on(t.tenderAId, t.tenderBId)]
+);
 
 export const featuredTenders = pgTable("featured_tenders", {
   id: uuid("id").primaryKey().defaultRandom(),

@@ -36,6 +36,20 @@
       "when": 1784394267113,
       "tag": "0004_careful_zaran",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784400686732,
+      "tag": "0005_spicy_absorbing_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784400953054,
+      "tag": "0006_sleepy_shape",
+      "breakpoints": true
     }
   ]
 }

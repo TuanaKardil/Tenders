@@ -1,0 +1,1 @@
+ALTER TABLE "dedupe_clusters" ADD COLUMN "member_count" integer DEFAULT 1 NOT NULL;
