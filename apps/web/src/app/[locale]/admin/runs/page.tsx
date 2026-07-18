@@ -1,5 +1,5 @@
 import { desc, eq, sql } from "drizzle-orm";
-import { db, ingestionRuns, sources, documents, tenders } from "@repo/db";
+import { db, ingestionRuns, sources, documents, tenders, noticeTypeMappings } from "@repo/db";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
 import {
@@ -78,6 +78,54 @@ export default async function AdminRunsPage() {
     (docTotals?.total ?? 0) > 0
       ? (((docTotals?.failed ?? 0) / (docTotals?.total ?? 1)) * 100).toFixed(1)
       : "0";
+
+  // ---- Normalize summary (per first_seen day) ----
+  const normDays = await db
+    .select({
+      day: sql<string>`date(first_seen_at)`,
+      created: sql<number>`count(*)::int`,
+      noClosing: sql<number>`count(*) filter (where closing_at is null)::int`,
+      noBudget: sql<number>`count(*) filter (where estimated_value_max is null and value_usd_est is null)::int`,
+      noDocs: sql<number>`count(*) filter (where documents_count = 0)::int`,
+    })
+    .from(tenders)
+    .groupBy(sql`date(first_seen_at)`)
+    .orderBy(sql`date(first_seen_at) desc`)
+    .limit(14);
+
+  // notice_type distribution per day (compact "tender 88 · rfq 3" strings).
+  const ntRows = await db
+    .select({
+      day: sql<string>`date(first_seen_at)`,
+      nt: tenders.noticeType,
+      n: sql<number>`count(*)::int`,
+    })
+    .from(tenders)
+    .groupBy(sql`date(first_seen_at)`, tenders.noticeType)
+    .orderBy(sql`date(first_seen_at) desc`, sql`count(*) desc`);
+  const ntByDay = new Map<string, string>();
+  for (const r of ntRows) {
+    const prev = ntByDay.get(r.day);
+    const part = `${r.nt ?? "—"} ${r.n}`;
+    ntByDay.set(r.day, prev ? `${prev} · ${part}` : part);
+  }
+
+  // Dictionary learning per day (AI-learned mappings; DB-hit counts are
+  // runtime-only and not persisted, so only learned rows are reportable).
+  const dictRows = await db
+    .select({
+      day: sql<string>`date(created_at)`,
+      active: sql<number>`count(*) filter (where status = 'active')::int`,
+      pending: sql<number>`count(*) filter (where status = 'pending_review')::int`,
+    })
+    .from(noticeTypeMappings)
+    .where(eq(noticeTypeMappings.origin, "ai"))
+    .groupBy(sql`date(created_at)`);
+  const dictByDay = new Map(dictRows.map((r) => [r.day, r]));
+
+  /** Amber warning when ≥50% of a day's rows miss the field (source quality signal). */
+  const warn = (missing: number, total: number) =>
+    total > 0 && missing / total >= 0.5 ? "bg-amber-100 font-medium text-amber-900" : "";
 
   return (
     <div>
@@ -164,6 +212,53 @@ export default async function AdminRunsPage() {
           </ul>
         </details>
       )}
+
+      {/* Normalize summary per day */}
+      <h2 className="mb-2 text-sm font-medium text-neutral-700">Normalize özeti — günlük</h2>
+      <p className="mb-2 text-xs text-neutral-500">
+        Amber hücre: o gün gelen kayıtların %50+&apos;sinde alan boş (kaynak kalite sinyali).
+      </p>
+      <div className="mb-6 overflow-x-auto rounded-lg border border-neutral-200 bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Gün</TableHead>
+              <TableHead className="text-right">Yeni ihale</TableHead>
+              <TableHead>notice_type dağılımı</TableHead>
+              <TableHead className="text-right">Kapanış yok</TableHead>
+              <TableHead className="text-right">Bütçe yok</TableHead>
+              <TableHead className="text-right">Belge yok</TableHead>
+              <TableHead>Sözlük öğrenme</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {normDays.map((d) => {
+              const dict = dictByDay.get(d.day);
+              return (
+                <TableRow key={d.day}>
+                  <TableCell className="whitespace-nowrap">{d.day}</TableCell>
+                  <TableCell className="text-right font-medium">{d.created}</TableCell>
+                  <TableCell className="max-w-[260px] text-xs text-neutral-600">
+                    {ntByDay.get(d.day) ?? "—"}
+                  </TableCell>
+                  <TableCell className={`text-right ${warn(d.noClosing, d.created)}`}>
+                    {d.noClosing}
+                  </TableCell>
+                  <TableCell className={`text-right ${warn(d.noBudget, d.created)}`}>
+                    {d.noBudget}
+                  </TableCell>
+                  <TableCell className={`text-right ${warn(d.noDocs, d.created)}`}>
+                    {d.noDocs}
+                  </TableCell>
+                  <TableCell className="text-xs text-neutral-600">
+                    {dict ? `${dict.active} aktif · ${dict.pending} beklemede` : "—"}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Scrape runs */}
       <h2 className="mb-2 text-sm font-medium text-neutral-700">Kaynak çekim koşuları</h2>
