@@ -2,11 +2,11 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 /**
- * Loads prompts from the repo-root PROMPTS.md at runtime, so prompts can be
- * edited there without touching code. Extracts the text between
- * `<!-- prompt:<name>:start -->` and `<!-- prompt:<name>:end -->`.
+ * Loads AI prompts from the repo-root `prompts/` folder at runtime — one file
+ * per task (`prompts/<name>.md`, the whole file is the prompt). Edit a prompt
+ * there and it takes effect on the next run, with no code change.
  */
-const PROMPTS_PATH = fileURLToPath(new URL("../../../../PROMPTS.md", import.meta.url));
+const PROMPTS_DIR = new URL("../../../../prompts/", import.meta.url);
 
 const cache = new Map<string, string>();
 
@@ -14,15 +14,9 @@ export function loadPrompt(name: string): string {
   const cached = cache.get(name);
   if (cached) return cached;
 
-  const md = readFileSync(PROMPTS_PATH, "utf8");
-  const re = new RegExp(
-    `<!--\\s*prompt:${name}:start\\s*-->\\s*\\n([\\s\\S]*?)\\n\\s*<!--\\s*prompt:${name}:end\\s*-->`
-  );
-  const match = md.match(re);
-  if (!match || !match[1]) {
-    throw new Error(`Prompt "${name}" not found in PROMPTS.md`);
-  }
-  const prompt = match[1].trim();
+  const path = fileURLToPath(new URL(`${name}.md`, PROMPTS_DIR));
+  const prompt = readFileSync(path, "utf8").trim();
+  if (!prompt) throw new Error(`Prompt "${name}" (prompts/${name}.md) is empty`);
   cache.set(name, prompt);
   return prompt;
 }

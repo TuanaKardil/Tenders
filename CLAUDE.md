@@ -5,7 +5,7 @@ Africa-first global tender discovery SaaS. Core loop:
 
 ## ⚠️ Read first
 - **Roadmap + phase status:** [`docs/ROADMAP.md`](./docs/ROADMAP.md) — single source of truth. Check it before starting any work; update it when a phase/setup step is done.
-- **AI prompts:** [`PROMPTS.md`](./PROMPTS.md) (repo root) — every AI prompt, one section per task. Code reads prompt text from this file at runtime; edit there, no code change needed.
+- **AI prompts:** [`prompts/`](./prompts/) folder (repo root) — one file per task, each file is the prompt. Code reads these at runtime; edit there, no code change needed.
 - **Service setup guide (accounts, keys):** [`docs/SETUP.md`](./docs/SETUP.md).
 - **Secret keys go only** in `.env` and `apps/web/.env.local` — never committed to git.
 
