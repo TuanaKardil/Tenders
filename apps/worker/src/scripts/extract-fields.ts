@@ -24,11 +24,15 @@ import { extractFields, type ExtractedFields } from "../lib/ai";
 const apply = process.argv.includes("--apply");
 const all = process.argv.includes("--all");
 const withDocs = process.argv.includes("--with-docs");
-const tenderLimit = Number(process.argv.find((a) => /^\d+$/.test(a)) ?? "0") || null;
 // --max-cost <usd>: hard budget for unattended runs (GitHub Actions). If the
 // deterministic estimate exceeds it, the script FAILS instead of spending.
 const maxCostIdx = process.argv.indexOf("--max-cost");
 const maxCost = maxCostIdx > -1 ? Number(process.argv[maxCostIdx + 1]) || null : null;
+// Positional numeric limit — must NOT swallow a flag's value (e.g. "--max-cost 2").
+const tenderLimit =
+  Number(
+    process.argv.find((a, i) => /^\d+$/.test(a) && i !== maxCostIdx + 1) ?? "0"
+  ) || null;
 // Measured upper bound per tender (document-bearing Kenya ones): ~$0.0024.
 const EST_PER_TENDER = 0.003;
 

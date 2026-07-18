@@ -12,7 +12,9 @@ import { translateSummarize } from "../lib/ai";
  * --dry prints results without writing to the DB or Meili (for a quick preview).
  */
 const args = process.argv.slice(2);
-const limit = Number(args.find((a) => /^\d+$/.test(a)) ?? 5) || 5;
+// No numeric arg = no limit: process every untranslated tender (automation).
+const limitArg = args.find((a) => /^\d+$/.test(a));
+const limit = limitArg ? Number(limitArg) : null;
 const dry = args.includes("--dry");
 const all = args.includes("--all"); // reprocess every tender, not just untranslated
 
@@ -34,7 +36,7 @@ async function main() {
     .innerJoin(sources, eq(tenders.sourceId, sources.id))
     .where(all ? undefined : isNull(tenders.titleTr))
     .orderBy(desc(tenders.firstSeenAt))
-    .limit(limit);
+    .limit(limit ?? 100_000);
 
   console.log(`${dry ? "[DRY] " : ""}Processing ${rows.length} tender(s), model gemini-2.5-flash-lite...\n`);
 
