@@ -128,7 +128,12 @@ async function backfillSource(slug: string) {
 }
 
 async function main() {
-  await wipeFakeData();
+  // --wipe: one-off full reset (drops ALL tender data + Meili index) — never
+  // used by automation. Default is incremental: onConflictDoNothing means
+  // existing tenders are untouched and only new notices insert.
+  if (process.argv.includes("--wipe")) {
+    await wipeFakeData();
+  }
   await registerSources();
   for (const slug of Object.keys(ADAPTERS)) {
     await backfillSource(slug);

@@ -1,0 +1,92 @@
+name: Daily pipeline
+
+# Scrape → process → publish, once a day. All steps are the same direct
+# (Redis-less) scripts we run locally, with --apply and hard cost caps.
+# Secrets documented in .github/workflows/README.md.
+
+on:
+  schedule:
+    - cron: "0 5 * * *" # 05:00 UTC = 08:00 TR, daily
+  workflow_dispatch: {} # manual trigger for testing
+
+# Never let two runs overlap (manual trigger during the cron run, etc.).
+concurrency:
+  group: daily-pipeline
+  cancel-in-progress: false
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/worker
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      MEILISEARCH_HOST: ${{ secrets.MEILISEARCH_HOST }}
+      MEILISEARCH_ADMIN_KEY: ${{ secrets.MEILISEARCH_ADMIN_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+      # Optional — without it the alert step logs "(dev, not sent)" and continues.
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # version read from package.json packageManager
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: .
+
+      # 1–2. Scrape (5 TS adapters) + normalize. Incremental: existing tenders
+      # are untouched (onConflictDoNothing); notice_type normalization runs at
+      # write time. NEVER pass --wipe here.
+      - name: Scrape + normalize
+        run: pnpm exec tsx src/scripts/backfill.ts
+
+      # 3. Deterministic dedup (no AI, full scan is cheap).
+      - name: Dedup Tier 1
+        run: pnpm exec tsx src/scripts/dedupe-tier1.ts --apply
+
+      # 4a. Capture attachment URLs for sources that expose them (Kenya, TED).
+      - name: Capture document URLs
+        run: pnpm exec tsx src/scripts/backfill-documents.ts --apply
+
+      # 4b. Extract text from new documents only (extracted_text IS NULL).
+      - name: Extract document text
+        run: pnpm exec tsx src/scripts/extract-documents.ts --apply
+
+      # 5a. AI field extraction — new tenders only (notice_type_ai IS NULL).
+      # Publish gate (conf >= 0.7) is applied here. Hard budget: $2/run.
+      - name: Extract structured fields
+        run: pnpm exec tsx src/scripts/extract-fields.ts --apply --max-cost 2
+
+      # 5b. Classification gate — only tenders first seen in the last 48h.
+      - name: Classification gate
+        run: pnpm exec tsx src/scripts/classify.ts --apply --since 48
+
+      # 6. Translate + summarize — untranslated tenders only (its default).
+      - name: Translate + summarize
+        run: pnpm exec tsx src/scripts/translate-summarize.ts
+
+      # 7. Semantic dedup — embeds only new tenders, judges only new pairs.
+      # Hard budget: $2/run.
+      - name: Dedup Tier 2
+        run: pnpm exec tsx src/scripts/dedupe-tier2.ts --apply --max-cost 2
+
+      # 8. Full Meilisearch reindex (settings + published tenders). Runs BEFORE
+      # alerts because alert matching queries Meilisearch.
+      - name: Meilisearch reindex
+        run: pnpm exec tsx src/scripts/meili-setup.ts --reindex
+
+      # 9. Alert matching + email dispatch (tolerates missing RESEND_API_KEY).
+      - name: Run alerts
+        run: pnpm exec tsx src/scripts/run-alerts.ts

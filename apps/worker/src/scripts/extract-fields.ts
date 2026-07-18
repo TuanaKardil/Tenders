@@ -25,6 +25,12 @@ const apply = process.argv.includes("--apply");
 const all = process.argv.includes("--all");
 const withDocs = process.argv.includes("--with-docs");
 const tenderLimit = Number(process.argv.find((a) => /^\d+$/.test(a)) ?? "0") || null;
+// --max-cost <usd>: hard budget for unattended runs (GitHub Actions). If the
+// deterministic estimate exceeds it, the script FAILS instead of spending.
+const maxCostIdx = process.argv.indexOf("--max-cost");
+const maxCost = maxCostIdx > -1 ? Number(process.argv[maxCostIdx + 1]) || null : null;
+// Measured upper bound per tender (document-bearing Kenya ones): ~$0.0024.
+const EST_PER_TENDER = 0.003;
 
 const DOC_CHAR_CAP = 100_000; // cap document text fed to the model (token guard)
 const CONF_GATE = 0.7;
@@ -92,6 +98,18 @@ async function main() {
   if (pool.length === 0) {
     console.log("Nothing to do.");
     process.exit(0);
+  }
+
+  // Unattended budget guard: fail loudly rather than spend past the cap.
+  if (maxCost !== null) {
+    const est = pool.length * EST_PER_TENDER;
+    if (est > maxCost) {
+      console.error(
+        `✗ Estimated cost $${est.toFixed(2)} (${pool.length} × $${EST_PER_TENDER}) exceeds --max-cost $${maxCost}. Aborting.`
+      );
+      process.exit(1);
+    }
+    console.log(`  budget: est $${est.toFixed(2)} ≤ cap $${maxCost} ✓`);
   }
 
   // Pull + cap the document text for a tender.

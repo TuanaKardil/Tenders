@@ -21,6 +21,10 @@ import { judgeDuplicate } from "../lib/ai";
  * estimate — stops for approval if the total exceeds $5.
  */
 const apply = process.argv.includes("--apply");
+// --max-cost <usd>: hard budget for unattended runs — judge cost above it FAILS
+// the script (exit 1) instead of waiting for human approval.
+const maxCostIdx = process.argv.indexOf("--max-cost");
+const maxCost = maxCostIdx > -1 ? Number(process.argv[maxCostIdx + 1]) || null : null;
 
 const SIM_CANDIDATE = 0.85; // judge pairs at/above this
 const SIM_AUTO = 0.9; // auto-merge only at/above this (judge-yes below → review)
@@ -144,7 +148,11 @@ async function main() {
     );
   }
 
-  if (judgeCost > COST_STOP) {
+  if (maxCost !== null && judgeCost > maxCost) {
+    console.error(`✗ Judge cost $${judgeCost.toFixed(2)} exceeds --max-cost $${maxCost}. Aborting.`);
+    process.exit(1);
+  }
+  if (maxCost === null && judgeCost > COST_STOP) {
     console.log(`\n⚠ Estimate exceeds $${COST_STOP} — STOP. Confirm before --apply.`);
     process.exit(0);
   }

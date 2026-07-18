@@ -53,7 +53,9 @@ const SUBJECTS: Record<EmailDispatchJob["template"], { en: string; tr: string }>
   "trial-payment-issue": { en: "Payment issue", tr: "Ödeme sorunu" },
 };
 
-export async function processEmailDispatch(job: Job<EmailDispatchJob>) {
+export async function processEmailDispatch(
+  job: Job<EmailDispatchJob> | { data: EmailDispatchJob }
+) {
   const data = job.data;
   const html = await renderTemplate(data);
   const searchName = (data.props as { searchName?: string }).searchName;

@@ -16,6 +16,10 @@ import { classifyTender } from "../lib/ai";
  * Rows are never deleted — fully reversible.
  */
 const apply = process.argv.includes("--apply");
+// --since <hours>: only tenders first seen in the window (automation passes 48
+// so the daily run never re-judges the whole table). Default: everything.
+const sinceIdx = process.argv.indexOf("--since");
+const sinceHours = sinceIdx > -1 ? Number(process.argv[sinceIdx + 1]) || null : null;
 
 /** Canonical notice_type enums that are open tender solicitations. */
 const TENDER_ENUMS = new Set(["tender", "rfp", "rfq", "eoi", "prequalification"]);
@@ -63,10 +67,15 @@ function tier1(t: typeof tenders.$inferSelect): Verdict {
 }
 
 async function main() {
-  const rows = await db
+  let rows = await db
     .select({ t: tenders, sourceSlug: sources.slug })
     .from(tenders)
     .innerJoin(sources, eq(tenders.sourceId, sources.id));
+  if (sinceHours) {
+    const cutoff = Date.now() - sinceHours * 3600_000;
+    rows = rows.filter(({ t }) => t.firstSeenAt.getTime() >= cutoff);
+    console.log(`(--since ${sinceHours}h: ${rows.length} tenders in window)`);
+  }
 
   let keptRule = 0;
   let keptAi = 0;
