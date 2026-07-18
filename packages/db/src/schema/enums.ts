@@ -62,6 +62,20 @@ export const alertDeliveryStatusEnum = pgEnum("alert_delivery_status", [
 
 export const dedupeMethodEnum = pgEnum("dedupe_method", ["hash", "fuzzy", "manual"]);
 
+/** Canonical notice type — raw source text is normalized into this (see @repo/config/notice-type). */
+export const noticeTypeEnum = pgEnum("notice_type", [
+  "tender",
+  "rfp",
+  "rfq",
+  "eoi",
+  "prequalification",
+  "award",
+  "cancellation",
+  "disposal",
+  "vacancy",
+  "unknown",
+]);
+
 export const takedownActionEnum = pgEnum("takedown_action", [
   "unpublished",
   "source_disabled",

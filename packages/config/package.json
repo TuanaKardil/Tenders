@@ -11,7 +11,8 @@
     "./constants": "./src/constants.ts",
     "./queues": "./src/queues.ts",
     "./ingest": "./src/ingest.ts",
-    "./search": "./src/search.ts"
+    "./search": "./src/search.ts",
+    "./notice-type": "./src/notice-type.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

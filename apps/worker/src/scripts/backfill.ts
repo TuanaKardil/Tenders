@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db, tenders, sources } from "@repo/db";
 import { TENDERS_INDEX } from "@repo/config/search";
+import { normalizeNoticeType } from "@repo/config/notice-type";
 import type { IngestNotice } from "@repo/config/ingest";
 import { getMeili } from "../meili";
 import { tenderToDoc } from "../lib/tender-doc";
@@ -101,7 +102,8 @@ async function backfillSource(slug: string) {
         buyerNameRaw: data.buyer_name ?? null,
         sectorPrimary: data.sector ?? null,
         cpvCodes: data.cpv_codes ?? [],
-        noticeType: data.notice_type ?? null,
+        noticeType: normalizeNoticeType(data.notice_type, source.slug),
+        noticeTypeRaw: data.notice_type ?? null,
         publishedAt: toDate(data.published_at),
         closingAt,
         status: statusFromClosingAt(closingAt, now),

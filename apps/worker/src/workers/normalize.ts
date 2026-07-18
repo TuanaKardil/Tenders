@@ -1,7 +1,8 @@
 import { Worker, type Job } from "bullmq";
 import { and, eq } from "drizzle-orm";
-import { db, rawNotices, tenders } from "@repo/db";
+import { db, rawNotices, tenders, sources } from "@repo/db";
 import { QUEUES, type NormalizeJob, ingestNoticeSchema } from "@repo/config";
+import { normalizeNoticeType } from "@repo/config/notice-type";
 import { connection } from "../connection";
 import { enqueueIndexSync } from "../queues";
 import {
@@ -41,6 +42,14 @@ export async function processNormalizeJob(job: Job<NormalizeJob>) {
   }
   const data = parsed.data;
 
+  // Source slug selects the right notice_type dictionary.
+  const [src] = await db
+    .select({ slug: sources.slug })
+    .from(sources)
+    .where(eq(sources.id, notice.sourceId))
+    .limit(1);
+  const sourceSlug = src?.slug ?? "";
+
   const sourceHash = computeSourceHash(data);
   const confidence = extractionConfidence(data);
   const now = new Date();
@@ -76,7 +85,8 @@ export async function processNormalizeJob(job: Job<NormalizeJob>) {
     funderName: data.funder_name ?? null,
     sectorPrimary: data.sector ?? null,
     cpvCodes: data.cpv_codes ?? [],
-    noticeType: data.notice_type ?? null,
+    noticeType: normalizeNoticeType(data.notice_type, sourceSlug),
+    noticeTypeRaw: data.notice_type ?? null,
     procurementMethod: data.procurement_method ?? null,
     contractType: data.contract_type ?? null,
     publishedAt: toDate(data.published_at),

@@ -12,7 +12,7 @@ import {
   uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
-import { tenderStatusEnum, dedupeMethodEnum } from "./enums";
+import { tenderStatusEnum, dedupeMethodEnum, noticeTypeEnum } from "./enums";
 import { sources, buyers } from "./sources";
 
 export const tenders = pgTable(
@@ -55,7 +55,10 @@ export const tenders = pgTable(
     cpvCodes: text("cpv_codes").array().notNull().default([]),
     unspscCodes: text("unspsc_codes").array().notNull().default([]),
     keywords: text("keywords").array().notNull().default([]),
-    noticeType: text("notice_type"),
+    /** Canonical enum, filled by @repo/config normalizeNoticeType() from notice_type_raw. */
+    noticeType: noticeTypeEnum("notice_type"),
+    /** Original source text (e.g. "Open Tender", "cn-standard"); kept so we can re-map. */
+    noticeTypeRaw: text("notice_type_raw"),
     procurementMethod: text("procurement_method"),
     contractType: text("contract_type"),
 

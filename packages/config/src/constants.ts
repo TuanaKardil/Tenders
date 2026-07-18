@@ -17,6 +17,7 @@ export const CLOSING_SOON_DAYS = 7;
 export const LICENSE_CLASSES = ["green", "yellow", "red"] as const;
 export type LicenseClass = (typeof LICENSE_CLASSES)[number];
 
+/** Canonical notice-type enum — mirrors the DB pgEnum and drives normalizeNoticeType(). */
 export const NOTICE_TYPES = [
   "tender",
   "rfp",
@@ -24,8 +25,10 @@ export const NOTICE_TYPES = [
   "eoi",
   "prequalification",
   "award",
-  "amendment",
   "cancellation",
+  "disposal",
+  "vacancy",
+  "unknown",
 ] as const;
 export type NoticeType = (typeof NOTICE_TYPES)[number];
 

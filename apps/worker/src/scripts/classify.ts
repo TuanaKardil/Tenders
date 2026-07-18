@@ -17,18 +17,11 @@ import { classifyTender } from "../lib/ai";
  */
 const apply = process.argv.includes("--apply");
 
-/** notice_type values that are clearly tender solicitations (from real data). */
-const TENDER_TYPES = [
-  "open tender", "open", "open domestic", "open international", "cn-standard",
-  "framework agreements", "framework agreement", "restricted tendering", "restricted",
-  "prequalification", "pre-qualification", "direct procurement",
-  "request for quotations/proposals", "rfq", "rfp", "eoi", "tender",
-  "invitation to bid", "request for proposal", "request for quotation",
-  "expression of interest",
-];
+/** Canonical notice_type enums that are open tender solicitations. */
+const TENDER_ENUMS = new Set(["tender", "rfp", "rfq", "eoi", "prequalification"]);
 
-/** notice_type values that clearly are NOT open tenders. */
-const DROP_TYPES = ["award", "cancellation", "cancelled", "disposal", "vacancy", "termination"];
+/** Canonical notice_type enums that are clearly NOT open tenders. */
+const DROP_ENUMS = new Set(["award", "cancellation", "disposal", "vacancy"]);
 
 /** Title keywords that clearly signal a non-tender. */
 const DROP_TITLE = [
@@ -52,20 +45,20 @@ type Verdict =
   | { decision: "ai" };
 
 function tier1(t: typeof tenders.$inferSelect): Verdict {
-  const nt = (t.noticeType ?? "").trim().toLowerCase();
+  const nt = t.noticeType; // canonical enum, or null
   const title = t.titleOriginal;
 
   for (const re of DROP_TITLE) {
     if (re.test(title)) return { decision: "drop", tier: 1, reason: `title matches ${re}` };
   }
-  if (nt && DROP_TYPES.some((d) => nt.includes(d))) {
-    return { decision: "drop", tier: 1, reason: `notice_type "${t.noticeType}" is a non-tender type` };
+  if (nt && DROP_ENUMS.has(nt)) {
+    return { decision: "drop", tier: 1, reason: `notice_type is "${nt}"` };
   }
   if (SUSPECT_TITLE.some((re) => re.test(title))) return { decision: "ai" };
-  if (nt && TENDER_TYPES.includes(nt)) {
-    return { decision: "keep", tier: 1, reason: `notice_type "${t.noticeType}" is a tender type` };
+  if (nt && TENDER_ENUMS.has(nt)) {
+    return { decision: "keep", tier: 1, reason: `notice_type is "${nt}"` };
   }
-  // Unknown/missing notice_type → let the AI decide.
+  // "unknown" or missing notice_type → let the AI decide.
   return { decision: "ai" };
 }
 
