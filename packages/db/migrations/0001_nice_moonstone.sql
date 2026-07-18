@@ -1,0 +1,1 @@
+ALTER TABLE "tenders" ADD COLUMN "unpublish_reason" text;

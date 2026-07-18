@@ -77,3 +77,62 @@ export async function translateSummarize(input: TsInput): Promise<TsOutput> {
     summary_tr: parsed.summary_tr?.trim() || "",
   };
 }
+
+// ---------------------------------------------------------------------------
+// Classification gate (PIPELINE.md stage 5) — AI tier for ambiguous notices.
+
+export interface ClassifyInput {
+  title: string;
+  buyer?: string | null;
+  noticeType?: string | null;
+  sector?: string | null;
+  source?: string | null;
+  description?: string | null;
+}
+
+export interface ClassifyOutput {
+  is_tender: boolean;
+  category: string;
+  reason: string;
+}
+
+export async function classifyTender(input: ClassifyInput): Promise<ClassifyOutput> {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) throw new Error("OPENROUTER_API_KEY not set");
+
+  const facts: Record<string, string> = { title: input.title };
+  const add = (k: string, v: string | null | undefined) => {
+    if (v && String(v).trim()) facts[k] = String(v).trim();
+  };
+  add("buyer", input.buyer);
+  add("notice_type", input.noticeType);
+  add("sector", input.sector);
+  add("source_portal", input.source);
+  add("description", input.description?.slice(0, 500));
+
+  const res = await fetch(ENDPOINT, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL,
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: loadPrompt("classification") },
+        { role: "user", content: JSON.stringify(facts) },
+      ],
+    }),
+  });
+
+  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${await res.text()}`);
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const content = json.choices?.[0]?.message?.content;
+  if (!content) throw new Error("empty AI response");
+
+  const parsed = JSON.parse(content) as Partial<ClassifyOutput>;
+  return {
+    is_tender: parsed.is_tender !== false, // lean towards keeping on malformed output
+    category: parsed.category ?? "tender",
+    reason: parsed.reason ?? "",
+  };
+}

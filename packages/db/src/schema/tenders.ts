@@ -81,6 +81,8 @@ export const tenders = pgTable(
     dedupeClusterId: uuid("dedupe_cluster_id").references(
       (): AnyPgColumn => dedupeClusters.id
     ),
+    /** Why this tender was unpublished (e.g. classification gate); null when fine. */
+    unpublishReason: text("unpublish_reason"),
     /** 0..1 — below 0.7 lands in the admin review queue. */
     extractionConfidence: real("extraction_confidence"),
     qualityScore: real("quality_score"),

@@ -8,9 +8,10 @@ files at runtime.
 | File | Task | Model | Used by |
 |------|------|-------|---------|
 | `translate-summarize.md` | Translate titles + write plain-language summaries (EN+TR) | google/gemini-2.5-flash-lite | `apps/worker/src/scripts/translate-summarize.ts` (PIPELINE.md stage 6) |
+| `classification.md` | Is this an open tender (vs award/disposal/vacancy/news)? AI tier of the classification gate — only ambiguous notices reach it; clear cases are decided by cheap rules first | google/gemini-2.5-flash-lite | `apps/worker/src/scripts/classify.ts` (PIPELINE.md stage 5) |
 
-_Upcoming (per `docs/PIPELINE.md`): `classification.md` (is it a tender?), `extraction.md`
-(structured fields from documents), `dedupe-judge.md` (same tender?), `seo.md` (SEO copy)._
+_Upcoming (per `docs/PIPELINE.md`): `extraction.md` (structured fields from documents),
+`dedupe-judge.md` (same tender?), `seo.md` (SEO copy)._
 
 ## How a prompt is used
 The file's text is sent as the **system message**; the tender's facts (title, buyer, country,
