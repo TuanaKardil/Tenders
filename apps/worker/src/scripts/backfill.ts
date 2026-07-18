@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { db, tenders, sources } from "@repo/db";
+import { db, tenders, sources, ingestionRuns } from "@repo/db";
 import { TENDERS_INDEX } from "@repo/config/search";
 import type { IngestNotice } from "@repo/config/ingest";
 import { createNoticeTypeResolver } from "../lib/notice-type-resolver";
@@ -85,12 +85,41 @@ async function backfillSource(slug: string) {
   if (!source) throw new Error(`source ${slug} not registered`);
 
   console.log(`Fetching from ${slug}...`);
+  // Record the run so /admin/runs reflects real pipeline activity.
+  const [run] = await db
+    .insert(ingestionRuns)
+    .values({ sourceId: source.id, scraperVersion: "ts-adapter" })
+    .returning({ id: ingestionRuns.id });
+  const finishRun = async (
+    status: "success" | "failed",
+    counts: { received: number; created: number },
+    error?: string
+  ) => {
+    if (!run) return;
+    await db
+      .update(ingestionRuns)
+      .set({
+        status,
+        finishedAt: new Date(),
+        counts: {
+          received: counts.received,
+          created: counts.created,
+          updated: 0,
+          failed: status === "failed" ? 1 : 0,
+          duplicates: counts.received - counts.created,
+        },
+        error: error?.slice(0, 500),
+      })
+      .where(sql`id = ${run.id}`);
+  };
+
   let notices: IngestNotice[];
   try {
     notices = await adapter();
   } catch (err) {
     // One unreachable portal must never sink the whole run (daily automation).
     console.error(`  ✗ ${slug} fetch failed, skipping: ${(err as Error).message.slice(0, 120)}`);
+    await finishRun("failed", { received: 0, created: 0 }, (err as Error).message);
     return;
   }
   console.log(`  ${notices.length} open + recent notices`);
@@ -141,6 +170,7 @@ async function backfillSource(slug: string) {
   if (docs.length > 0) {
     await getMeili().index(TENDERS_INDEX).addDocuments(docs, { primaryKey: "id" });
   }
+  await finishRun("success", { received: notices.length, created: inserted.length });
   console.log(`  inserted ${inserted.length}, indexed ${docs.length}`);
 }
 
