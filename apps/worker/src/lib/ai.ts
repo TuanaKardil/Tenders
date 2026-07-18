@@ -20,6 +20,9 @@ export interface TsInput {
   deadline?: string | null; // human date, e.g. "2026-07-20"
   published?: string | null;
   value?: string | null; // e.g. "$120,000" or "KES 4,000,000"
+  eligibility?: string | null; // extracted eligibility notes, if any
+  /** Extracted document text, already capped by the caller. */
+  documentText?: string | null;
 }
 
 export interface TsOutput {
@@ -51,6 +54,8 @@ export async function translateSummarize(input: TsInput): Promise<TsOutput> {
   add("submission_deadline", input.deadline);
   add("published_date", input.published);
   add("estimated_value", input.value);
+  add("eligibility_notes", input.eligibility);
+  add("document_text", input.documentText);
 
   const res = await fetch(ENDPOINT, {
     method: "POST",
@@ -75,9 +80,25 @@ export async function translateSummarize(input: TsInput): Promise<TsOutput> {
   return {
     title_en: parsed.title_en?.trim() || input.title,
     title_tr: parsed.title_tr?.trim() || input.title,
-    summary_en: parsed.summary_en?.trim() || "",
-    summary_tr: parsed.summary_tr?.trim() || "",
+    summary_en: stripFillerSentences(parsed.summary_en?.trim() || ""),
+    summary_tr: stripFillerSentences(parsed.summary_tr?.trim() || ""),
   };
+}
+
+/**
+ * Deterministic guard: small models keep emitting "details were not provided"
+ * padding despite the prompt forbidding it. Drop any sentence that only talks
+ * about missing information (EN + TR patterns).
+ */
+const FILLER_RE =
+  /not (?:been )?(?:specified|provided|detailed|stated|available)|details? (?:regarding|about|of)?[^.]*(?:unavailable|missing)|no (?:further|additional|specific) (?:details?|information)|unspecified|belirtilmemiş|sağlanmamış|detaylandırılmamış|bilinmemektedir|belirtilmemektedir|yer almamaktadır|mevcut değildir/i;
+
+export function stripFillerSentences(text: string): string {
+  if (!text) return text;
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  const kept = sentences.filter((s) => !FILLER_RE.test(s));
+  // Never return empty — if everything matched (degenerate case), keep original.
+  return kept.length > 0 ? kept.join(" ") : text;
 }
 
 // ---------------------------------------------------------------------------

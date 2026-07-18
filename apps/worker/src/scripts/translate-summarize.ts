@@ -1,5 +1,5 @@
 import { desc, eq, isNull } from "drizzle-orm";
-import { db, tenders, sources } from "@repo/db";
+import { db, tenders, sources, documents } from "@repo/db";
 import { TENDERS_INDEX } from "@repo/config/search";
 import { getMeili } from "../meili";
 import { tenderToDoc } from "../lib/tender-doc";
@@ -42,12 +42,28 @@ async function main() {
 
   const done: { t: typeof tenders.$inferSelect; source: typeof sources.$inferSelect }[] = [];
 
+  // Cap for document text fed into the summary call (tokens stay bounded).
+  const DOC_CHAR_CAP = 30_000;
+
   for (const { t, source } of rows) {
     try {
+      const docs = await db
+        .select({ txt: documents.extractedText })
+        .from(documents)
+        .where(eq(documents.tenderId, t.id));
+      const documentText = docs
+        .map((d) => d.txt ?? "")
+        .filter(Boolean)
+        .join("\n\n---\n\n")
+        .slice(0, DOC_CHAR_CAP);
+
       const out = await translateSummarize({
         title: t.titleOriginal,
         language: t.languageOriginal,
-        description: t.summaryEn,
+        // On re-summarize (--all) summaryEn holds our PREVIOUS AI summary —
+        // feeding it back makes the model copy old filler. Fresh tenders still
+        // carry the source description there, so only those pass it through.
+        description: all ? null : t.summaryEn,
         buyer: t.buyerNameRaw,
         funder: t.funderName,
         country: t.country,
@@ -58,6 +74,8 @@ async function main() {
         deadline: isoDate(t.closingAt),
         published: isoDate(t.publishedAt),
         value: money(t),
+        eligibility: t.eligibilityNotesEn,
+        documentText: documentText || null,
       });
 
       console.log(`── [${source.slug}] ${t.country} (${t.languageOriginal})`);
