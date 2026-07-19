@@ -80,7 +80,6 @@ export async function fetchUngm(): Promise<IngestNotice[]> {
 
     const deadlineText = $row.find(".deadline").first().text().trim();
     const agency = $row.find(".resultAgency").first().text().trim();
-    const reference = $row.find(".resultInfo1").first().text().trim();
 
     // Plain cells: locate the published date (DD-Mon-YYYY) and the country name.
     const cellTexts = $row
@@ -103,7 +102,10 @@ export async function fetchUngm(): Promise<IngestNotice[]> {
 
     out.push({
       source_slug: "ungm",
-      source_notice_id: reference || id,
+      // The stable id is the data-noticeid (also in the URL). The old code
+      // used .resultInfo1, which actually holds the deadline text plus a
+      // per-scrape changing number → a new row every refresh (duplicates).
+      source_notice_id: id,
       source_url: `${BASE}/Public/Notice/${id}`,
       title: title.slice(0, 400),
       country,
