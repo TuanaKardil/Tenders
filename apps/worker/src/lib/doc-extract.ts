@@ -108,10 +108,14 @@ export async function extractText(buffer: Buffer, kind: FileKind): Promise<Extra
     const parser = new PDFParse({ data: new Uint8Array(buffer) });
     const result = await parser.getText();
     const text = (result.text ?? "").trim();
-    if (text.length > 0) return { text, method: "pdf-parse" };
-    // No text layer → scanned PDF → hand it to Gemini.
+    // Scanned PDFs often carry a TRIVIAL text layer (a header, a page number)
+    // — treat anything under the threshold as "no real text" and OCR it.
+    const MIN_REAL_TEXT = 100;
+    if (text.length >= MIN_REAL_TEXT) return { text, method: "pdf-parse" };
     const ocr = await extractTextFromDocument(buffer, "application/pdf");
-    return { text: ocr.trim(), method: "gemini-multimodal" };
+    // Keep whichever attempt yielded more (OCR can also come back thin).
+    if (ocr.trim().length > text.length) return { text: ocr.trim(), method: "gemini-multimodal" };
+    return { text, method: "pdf-parse" };
   }
 
   // PNG / JPG → Gemini multimodal.

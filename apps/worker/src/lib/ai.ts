@@ -91,7 +91,7 @@ export async function translateSummarize(input: TsInput): Promise<TsOutput> {
  * about missing information (EN + TR patterns).
  */
 const FILLER_RE =
-  /not (?:been )?(?:specified|provided|detailed|stated|available)|details? (?:regarding|about|of)?[^.]*(?:unavailable|missing)|no (?:further|additional|specific) (?:details?|information)|unspecified|belirtilmemiş|sağlanmamış|detaylandırılmamış|bilinmemektedir|belirtilmemektedir|yer almamaktadır|mevcut değildir/i;
+  /not (?:been )?(?:specified|provided|detailed|stated|available)|details? (?:regarding|about|of)?[^.]*(?:unavailable|missing)|no (?:further|additional|specific) (?:details?|information)|(?:further|more|additional|specific) details?[^.]{0,160}(?:expected|found|available|provided|required|obtained|outlined)|refer to the tender documents?|unspecified|belirtilmemiş|sağlanmamış|detaylandırılmamış|bilinmemektedir|belirtilmemektedir|yer almamaktadır|mevcut değildir|(?:sunulması|yer alması|bulunması|sağlanması|edinilmesi) beklenmektedir|(?:daha fazla|ayrıntılı|ek) (?:bilgi|detay|ayrıntı)[^.]{0,90}(?:beklenmektedir|yer almaktadır|bulunmaktadır|edinilebilir|mevcuttur)|ihale (?:belgelerinde|dokümantasyonunda|dosyasında)[^.]*(?:beklenmektedir|yer almaktadır|bulunmaktadır)/i;
 
 export function stripFillerSentences(text: string): string {
   if (!text) return text;
