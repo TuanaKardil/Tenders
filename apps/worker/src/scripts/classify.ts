@@ -25,7 +25,7 @@ const sinceHours = sinceIdx > -1 ? Number(process.argv[sinceIdx + 1]) || null : 
 const TENDER_ENUMS = new Set(["tender", "rfp", "rfq", "eoi", "prequalification"]);
 
 /** Canonical notice_type enums that are clearly NOT open tenders. */
-const DROP_ENUMS = new Set(["award", "cancellation", "disposal", "vacancy"]);
+const DROP_ENUMS = new Set(["award", "cancellation", "disposal", "vacancy", "amendment"]);
 
 /** Title keywords that clearly signal a non-tender. */
 const DROP_TITLE = [

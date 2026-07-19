@@ -112,18 +112,19 @@ export const NOTICE_TYPE_STATIC_DICT: Record<string, Record<string, NoticeType>>
     disposal: "disposal",
   },
 
-  // UNGM — notice type label (scraper currently emits none → null → unknown)
+  // UNGM — the scraper derives the type from the title (see extractUngmType),
+  // so these keys are the already-canonical strings it emits.
   ungm: {
+    tender: "tender",
+    rfp: "rfp",
+    rfq: "rfq",
+    eoi: "eoi",
+    amendment: "amendment",
+    unknown: "unknown",
     "request for proposal": "rfp",
-    "request for proposal (rfp)": "rfp",
     "request for quotation": "rfq",
-    "request for quotation (rfq)": "rfq",
     "invitation to bid": "tender",
-    "invitation to bid (itb)": "tender",
     "expression of interest": "eoi",
-    "expression of interest (eoi)": "eoi",
-    "request for information": "unknown",
-    "request for information (rfi)": "unknown",
     "notice of award": "award",
     "contract award": "award",
   },
@@ -144,6 +145,7 @@ function tedByPrefix(code: string): NoticeType | null {
 function byKeyword(s: string): NoticeType {
   if (/\baward\b|best evaluated bidder|notification of award/.test(s)) return "award";
   if (/\bcancel/.test(s) || /\btermination\b/.test(s)) return "cancellation";
+  if (/\bprorogation\b|\bamendment\b|\baddendum\b|\bcorrigendum\b/.test(s)) return "amendment";
   if (/\bdisposal\b|\bauction\b/.test(s)) return "disposal";
   if (/\bvacancy\b|\brecruitment\b|\binternship\b/.test(s)) return "vacancy";
   if (/pre-?qualification/.test(s)) return "prequalification";

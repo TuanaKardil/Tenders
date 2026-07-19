@@ -79,6 +79,7 @@ export const noticeTypeEnum = pgEnum("notice_type", [
   "cancellation",
   "disposal",
   "vacancy",
+  "amendment",
   "unknown",
 ]);
 

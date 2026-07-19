@@ -10,6 +10,28 @@ import { fetchHtml, nameToIso2, parseDmy, isRecentAndOpen } from "./shared";
  */
 const BASE = "https://www.ungm.org";
 
+/**
+ * UNGM sends no notice_type field, but its titles carry a clear type prefix
+ * ("RFQ-...", "REQUEST FOR PROPOSAL...", "REOI:...", "Long-Term Arrangement").
+ * Extract it so the dictionary can resolve it instead of everything falling to
+ * unknown. Returns undefined when no pattern matches (→ dictionary/AI decide).
+ */
+export function extractUngmType(title: string): string | undefined {
+  const t = title.toLowerCase();
+  const has = (...res: RegExp[]) => res.some((re) => re.test(t));
+  // Amendments/extensions of an existing notice — checked first.
+  if (has(/\bprorogation\b/, /\bamendment\b/, /\baddendum\b/, /\bcorrigendum\b/)) return "amendment";
+  if (has(/^rfq\b/, /\brequest for quotations?\b/, /\bdemande de (prix|cotation)/)) return "rfq";
+  if (has(/^rfp\b/, /\brequest for proposals?\b/, /\bdemande de propositions?\b/)) return "rfp";
+  if (has(/^reoi\b/, /^eoi\b/, /expression of interest/, /manifestation d[’']int[ée]r[êe]t/, /^appel [àa] consultation/))
+    return "eoi";
+  if (has(/^itb\b/, /invitation to bid/, /invitation to tender/, /^appel d[’']offres?/, /^avis d[’']appel d[’']offres?/))
+    return "tender";
+  if (has(/long[- ]term arrangement|\blta\b/)) return "tender";
+  if (has(/\brfi\b/, /request for information/)) return "unknown"; // market research, not a solicitation
+  return undefined;
+}
+
 export async function fetchUngm(): Promise<IngestNotice[]> {
   const body = JSON.stringify({
     PageIndex: 0,
@@ -66,6 +88,7 @@ export async function fetchUngm(): Promise<IngestNotice[]> {
       .map((_, c) => $(c).text().replace(/\s+/g, " ").trim())
       .get();
 
+    const noticeTypeRaw = extractUngmType(title);
     const closingIso = parseDmy(deadlineText);
     let publishedIso: string | undefined;
     let country: string | undefined;
@@ -86,6 +109,7 @@ export async function fetchUngm(): Promise<IngestNotice[]> {
       country,
       buyer_name: agency || undefined,
       funder_name: agency || undefined,
+      notice_type: noticeTypeRaw,
       published_at: publishedIso,
       closing_at: closingIso,
     });

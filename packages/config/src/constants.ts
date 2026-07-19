@@ -28,6 +28,7 @@ export const NOTICE_TYPES = [
   "cancellation",
   "disposal",
   "vacancy",
+  "amendment",
   "unknown",
 ] as const;
 export type NoticeType = (typeof NOTICE_TYPES)[number];
