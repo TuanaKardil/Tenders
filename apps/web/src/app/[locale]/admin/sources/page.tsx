@@ -1,5 +1,5 @@
-import { asc } from "drizzle-orm";
-import { db, sources } from "@repo/db";
+import { asc, desc, eq, sql } from "drizzle-orm";
+import { db, sources, ingestionRuns } from "@repo/db";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -28,6 +28,29 @@ function healthOf(source: { isActive: boolean; lastRunAt: Date | null; cadence: 
 
 export default async function AdminSourcesPage() {
   const rows = await db.select().from(sources).orderBy(asc(sources.name));
+
+  // Consecutive-empty-run alarm: a source whose LAST TWO ingestion runs both
+  // brought nothing (created=0 AND duplicates=0 — not just "all duplicates")
+  // is likely broken. Fetch the last 2 runs per source.
+  const recentRuns = await db
+    .select({
+      sourceId: ingestionRuns.sourceId,
+      counts: ingestionRuns.counts,
+      startedAt: ingestionRuns.startedAt,
+    })
+    .from(ingestionRuns)
+    .orderBy(desc(ingestionRuns.startedAt));
+  const runsBySource = new Map<string, typeof recentRuns>();
+  for (const r of recentRuns) {
+    const list = runsBySource.get(r.sourceId) ?? [];
+    if (list.length < 2) list.push(r);
+    runsBySource.set(r.sourceId, list);
+  }
+  const emptyAlarm = (sourceId: string): boolean => {
+    const last2 = runsBySource.get(sourceId) ?? [];
+    if (last2.length < 2) return false; // need two runs to call it consecutive
+    return last2.every((r) => (r.counts.created ?? 0) === 0 && (r.counts.duplicates ?? 0) === 0);
+  };
 
   return (
     <div>
@@ -81,7 +104,18 @@ export default async function AdminSourcesPage() {
                       : "—"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={health.variant}>{health.label}</Badge>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <Badge variant={health.variant}>{health.label}</Badge>
+                      {emptyAlarm(source.id) && (
+                        <Badge
+                          variant="secondary"
+                          className="border-amber-300 bg-amber-100 text-amber-800"
+                          title="Son 2 koşuda hiç yeni/mükerrer kayıt gelmedi"
+                        >
+                          2+ koşu boş
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
