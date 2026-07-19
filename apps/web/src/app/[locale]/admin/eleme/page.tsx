@@ -1,6 +1,7 @@
 import { desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db, tenders, sources } from "@repo/db";
 import { Link } from "@/i18n/navigation";
+import { ApproveButton } from "./approve-button";
 import {
   Table,
   TableBody,
@@ -58,6 +59,10 @@ export default async function AdminElemePage() {
     .where(isNotNull(tenders.unpublishReason))
     .groupBy(sources.slug)
     .orderBy(sql`count(*) desc`);
+
+  // Founder-approval queue (unknown-typed) vs real classification drops.
+  const pendingRows = dropped.filter(({ t }) => t.unpublishReason?.startsWith("pending-approval"));
+  const droppedRows = dropped.filter(({ t }) => !t.unpublishReason?.startsWith("pending-approval"));
 
   // Group the dropped rows by reason bucket (done in JS — buckets are derived).
   const byBucket = new Map<string, number>();
@@ -135,6 +140,54 @@ export default async function AdminElemePage() {
         </div>
       </div>
 
+      {/* Founder approval queue: unknown-typed tenders wait here until approved */}
+      <h2 className="mb-2 mt-2 text-sm font-medium text-neutral-700">
+        Onay bekleyenler — türü belirsiz ({pendingRows.length})
+      </h2>
+      <p className="mb-3 text-xs text-neutral-500">
+        Türü <code className="rounded bg-neutral-100 px-1">unknown</code> olan ihaleler sen
+        onaylayana kadar yayınlanmaz. &quot;Tender olarak onayla&quot; → tür=tender (köken: manuel),
+        yayına girer ve aramaya anında eklenir.
+      </p>
+      <div className="mb-8 overflow-x-auto rounded-lg border border-amber-200 bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>İhale (orijinal başlık)</TableHead>
+              <TableHead>Kaynak</TableHead>
+              <TableHead>Ülke</TableHead>
+              <TableHead>Karar</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pendingRows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-neutral-500">
+                  Onay bekleyen ihale yok.
+                </TableCell>
+              </TableRow>
+            )}
+            {pendingRows.map(({ t, sourceSlug }) => (
+              <TableRow key={t.id}>
+                <TableCell className="max-w-[340px]">
+                  <Link href={`/admin/tenders/${t.id}`} className="line-clamp-2 font-medium hover:underline">
+                    {t.titleOriginal}
+                  </Link>
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-xs font-medium">{sourceSlug}</TableCell>
+                <TableCell>{t.country}</TableCell>
+                <TableCell>
+                  <ApproveButton tenderId={t.id} title={t.titleOriginal} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <h2 className="mb-2 text-sm font-medium text-neutral-700">
+        Elenenler — ihale değil ({droppedRows.length})
+      </h2>
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
         <Table>
           <TableHeader>
@@ -148,14 +201,14 @@ export default async function AdminElemePage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {dropped.length === 0 && (
+            {droppedRows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center text-neutral-500">
                   Kapıda elenen ihale yok — tüm kayıtlar gerçek ihale.
                 </TableCell>
               </TableRow>
             )}
-            {dropped.map(({ t, sourceSlug }) => (
+            {droppedRows.map(({ t, sourceSlug }) => (
               <TableRow key={t.id}>
                 <TableCell className="max-w-[280px]">
                   <Link

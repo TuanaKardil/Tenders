@@ -133,6 +133,7 @@ async function backfillSource(slug: string) {
     if (!data.country) continue;
     const closingAt = toDate(data.closing_at);
     const confidence = extractionConfidence(data);
+    const resolvedType = await noticeTypeResolver.resolve(data.notice_type, source.slug, data.language);
     const [row] = await db
       .insert(tenders)
       .values({
@@ -149,7 +150,7 @@ async function backfillSource(slug: string) {
         buyerNameRaw: data.buyer_name ?? null,
         sectorPrimary: data.sector ?? null,
         cpvCodes: data.cpv_codes ?? [],
-        noticeType: await noticeTypeResolver.resolve(data.notice_type, source.slug, data.language),
+        noticeType: resolvedType,
         noticeTypeRaw: data.notice_type ?? null,
         procurementMethod: data.procurement_method ?? null,
         contractType: data.contract_type ?? null,
@@ -161,7 +162,8 @@ async function backfillSource(slug: string) {
         status: statusFromClosingAt(closingAt, now),
         extractionConfidence: confidence,
         qualityScore: qualityScore(data),
-        isPublished: confidence >= 0.7,
+        // "unknown" tipli ihale kurucu onayına kadar yayınlanmaz.
+        isPublished: confidence >= 0.7 && resolvedType !== "unknown",
         fieldProvenance: sourceProvenance(data),
         firstSeenAt: now,
         lastSeenAt: now,

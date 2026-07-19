@@ -79,6 +79,7 @@ async function main() {
 
   let keptRule = 0;
   let keptAi = 0;
+  const pendings: { t: typeof tenders.$inferSelect; sourceSlug: string; reason: string }[] = [];
   const drops: { t: typeof tenders.$inferSelect; sourceSlug: string; tier: 1 | 2; reason: string }[] = [];
   let aiCalls = 0;
 
@@ -92,7 +93,9 @@ async function main() {
       drops.push({ t, sourceSlug, tier: v.tier, reason: v.reason });
       continue;
     }
-    // Ambiguous → AI tier.
+    // Ambiguous → AI tier. Even when the AI keeps it, an "unknown"-typed
+    // tender is NOT published — it waits in the founder-approval queue
+    // (unpublish_reason "pending-approval: ..."), per founder policy.
     aiCalls++;
     try {
       const out = await classifyTender({
@@ -105,6 +108,9 @@ async function main() {
       });
       if (out.is_tender) {
         keptAi++;
+        if (t.noticeType === "unknown") {
+          pendings.push({ t, sourceSlug, reason: "pending-approval: notice_type unknown (AI judged tender — awaiting founder confirmation)" });
+        }
       } else {
         drops.push({ t, sourceSlug, tier: 2, reason: `AI: ${out.category} — ${out.reason}` });
       }
@@ -118,7 +124,8 @@ async function main() {
   console.log(`\n${apply ? "" : "[DRY] "}Classification gate over ${rows.length} tenders`);
   console.log(`  kept by rules : ${keptRule}`);
   console.log(`  sent to AI    : ${aiCalls} (kept: ${keptAi}, dropped: ${drops.filter((d) => d.tier === 2).length})`);
-  console.log(`  TO DROP       : ${drops.length}\n`);
+  console.log(`  TO DROP       : ${drops.length}`);
+  console.log(`  PENDING (unknown → onay kuyruğu): ${pendings.length}\n`);
 
   for (const d of drops) {
     console.log(`  ✗ [${d.sourceSlug}] ${d.t.titleOriginal.slice(0, 90)}`);
@@ -138,10 +145,18 @@ async function main() {
       .set({ isPublished: false, unpublishReason: d.reason, updatedAt: now })
       .where(eq(tenders.id, d.t.id));
   }
-  if (drops.length > 0) {
-    await getMeili().index(TENDERS_INDEX).deleteDocuments(drops.map((d) => d.t.id));
+  for (const p of pendings) {
+    if (!p.t.isPublished && p.t.unpublishReason) continue; // already queued
+    await db
+      .update(tenders)
+      .set({ isPublished: false, unpublishReason: p.reason, updatedAt: now })
+      .where(eq(tenders.id, p.t.id));
   }
-  console.log(`\nApplied: ${drops.length} unpublished (reason recorded) + removed from Meilisearch.`);
+  const toRemove = [...drops.map((d) => d.t.id), ...pendings.filter((p) => p.t.isPublished).map((p) => p.t.id)];
+  if (toRemove.length > 0) {
+    await getMeili().index(TENDERS_INDEX).deleteDocuments(toRemove);
+  }
+  console.log(`\nApplied: ${drops.length} dropped + ${pendings.length} pending-approval (reason recorded); ${toRemove.length} removed from Meilisearch.`);
   process.exit(0);
 }
 

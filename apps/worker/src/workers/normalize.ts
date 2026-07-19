@@ -51,6 +51,11 @@ export async function processNormalizeJob(job: Job<NormalizeJob>) {
     .limit(1);
   const sourceSlug = src?.slug ?? "";
 
+  const resolvedNoticeType = await createNoticeTypeResolver().resolve(
+    data.notice_type,
+    sourceSlug,
+    data.language
+  );
   const sourceHash = computeSourceHash(data);
   const confidence = extractionConfidence(data);
   const now = new Date();
@@ -86,8 +91,7 @@ export async function processNormalizeJob(job: Job<NormalizeJob>) {
     funderName: data.funder_name ?? null,
     sectorPrimary: data.sector ?? null,
     cpvCodes: data.cpv_codes ?? [],
-    noticeType: await createNoticeTypeResolver()
-      .resolve(data.notice_type, sourceSlug, data.language),
+    noticeType: resolvedNoticeType,
     noticeTypeRaw: data.notice_type ?? null,
     procurementMethod: data.procurement_method ?? null,
     contractType: data.contract_type ?? null,
@@ -147,7 +151,7 @@ export async function processNormalizeJob(job: Job<NormalizeJob>) {
         sourceNoticeId: data.source_notice_id,
         // English-language notices with enough confidence publish immediately;
         // others wait for the extract/translate pipeline (Phase 1b) or review.
-        isPublished: confidence >= 0.7,
+        isPublished: confidence >= 0.7 && resolvedNoticeType !== "unknown",
         titleEn: (data.language ?? "en") === "en" ? data.title : null,
         summaryEn: (data.language ?? "en") === "en" ? (data.description ?? null) : null,
         firstSeenAt: now,
