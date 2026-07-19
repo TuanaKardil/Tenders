@@ -13,7 +13,8 @@
     "./ingest": "./src/ingest.ts",
     "./search": "./src/search.ts",
     "./notice-type": "./src/notice-type.ts",
-    "./source-contract": "./src/source-contract.ts"
+    "./source-contract": "./src/source-contract.ts",
+    "./alerts": "./src/alerts.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

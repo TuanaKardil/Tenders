@@ -8,6 +8,7 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  vector,
 } from "drizzle-orm/pg-core";
 import {
   alertFrequencyEnum,
@@ -43,6 +44,10 @@ export const savedSearches = pgTable(
     frequency: alertFrequencyEnum("frequency").notNull().default("weekly"),
     lastRunAt: timestamp("last_run_at", { withTimezone: true }),
     lastResultCount: integer("last_result_count").notNull().default(0),
+    /** Semantic-match vector for the search text (q + sector names); gemini-embedding-001. */
+    embedding: vector("embedding", { dimensions: 768 }),
+    /** When the embedding was computed — stale vs updatedAt triggers re-embed. */
+    embeddingUpdatedAt: timestamp("embedding_updated_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -80,6 +85,8 @@ export const alertDeliveries = pgTable(
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
     resendMessageId: text("resend_message_id"),
     status: alertDeliveryStatusEnum("status").notNull().default("sent"),
+    /** Per-tender match origin: { tenderId: "keyword" | "semantic" | "both" }. */
+    matchTypes: jsonb("match_types").$type<Record<string, string>>().notNull().default({}),
   },
   (t) => [index("alert_deliveries_search_idx").on(t.savedSearchId, t.sentAt)]
 );
