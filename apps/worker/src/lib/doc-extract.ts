@@ -1,5 +1,8 @@
 import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
+import * as XLSX from "xlsx";
+// @ts-expect-error — word-extractor ships no types; API: new WordExtractor().extract(buffer)
+import WordExtractor from "word-extractor";
 import { extractTextFromDocument } from "./ai";
 
 /**
@@ -16,8 +19,13 @@ export const DOWNLOAD_TIMEOUT_MS = 30_000; // 30s per download
 
 const UA = "Mozilla/5.0 AppleWebKit/537.36 Chrome/120 Safari/537.36";
 
-export type FileKind = "pdf" | "docx" | "png" | "jpg";
-export type ExtractionMethod = "pdf-parse" | "mammoth" | "gemini-multimodal";
+export type FileKind = "pdf" | "docx" | "doc" | "xlsx" | "png" | "jpg";
+export type ExtractionMethod =
+  | "pdf-parse"
+  | "mammoth"
+  | "word-extractor"
+  | "sheetjs"
+  | "gemini-multimodal";
 
 /** Map a source file_type / URL extension onto a supported kind, or null to skip. */
 export function fileKind(fileType: string | null, url: string): FileKind | null {
@@ -26,14 +34,18 @@ export function fileKind(fileType: string | null, url: string): FileKind | null 
   const t = raw || ext;
   if (t.includes("pdf")) return "pdf";
   if (t.includes("docx") || t.includes("wordprocessingml")) return "docx";
+  if (t === "doc" || t.includes("msword")) return "doc"; // legacy binary Word
+  if (t.includes("xlsx") || t === "xls" || t.includes("spreadsheetml")) return "xlsx";
   if (t.includes("png")) return "png";
   if (t.includes("jpg") || t.includes("jpeg")) return "jpg";
-  return null; // .doc (legacy), xls, zip, etc. → skip
+  return null; // zip, exe, etc. → skip
 }
 
 /** Which extraction path a kind takes before download (PDFs may still fall back to Gemini). */
 export function plannedMethod(kind: FileKind): ExtractionMethod {
   if (kind === "docx") return "mammoth";
+  if (kind === "doc") return "word-extractor";
+  if (kind === "xlsx") return "sheetjs";
   if (kind === "pdf") return "pdf-parse";
   return "gemini-multimodal";
 }
@@ -87,7 +99,7 @@ export async function downloadDocument(
   }
 }
 
-const MIME: Record<Exclude<FileKind, "pdf" | "docx">, string> = {
+const MIME: Record<"png" | "jpg", string> = {
   png: "image/png",
   jpg: "image/jpeg",
 };
@@ -102,6 +114,30 @@ export async function extractText(buffer: Buffer, kind: FileKind): Promise<Extra
   if (kind === "docx") {
     const { value } = await mammoth.extractRawText({ buffer });
     return { text: value.trim(), method: "mammoth" };
+  }
+
+  if (kind === "doc") {
+    // Legacy binary Word (97–2003).
+    const extractor = new WordExtractor();
+    const doc = await extractor.extract(buffer);
+    const text = [doc.getBody(), doc.getFootnotes(), doc.getEndnotes()]
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+    return { text, method: "word-extractor" };
+  }
+
+  if (kind === "xlsx") {
+    // All sheets → CSV-ish text (SheetJS also reads legacy .xls).
+    const wb = XLSX.read(buffer, { type: "buffer" });
+    const parts: string[] = [];
+    for (const name of wb.SheetNames) {
+      const sheet = wb.Sheets[name];
+      if (!sheet) continue;
+      const csv = XLSX.utils.sheet_to_csv(sheet).trim();
+      if (csv) parts.push(`[sheet: ${name}]\n${csv}`);
+    }
+    return { text: parts.join("\n\n").trim(), method: "sheetjs" };
   }
 
   if (kind === "pdf") {
