@@ -5,6 +5,7 @@ import {
   char,
   boolean,
   timestamp,
+  real,
 } from "drizzle-orm/pg-core";
 import { licenseClassEnum, buyerTypeEnum } from "./enums";
 
@@ -22,6 +23,8 @@ export const sources = pgTable("sources", {
   scraperKey: text("scraper_key"),
   isActive: boolean("is_active").notNull().default(true),
   lastRunAt: timestamp("last_run_at", { withTimezone: true }),
+  /** 30-day rolling avg documents_count per tender — the baseline for the coverage anomaly alarm. */
+  avgDocsPerTender30d: real("avg_docs_per_tender_30d"),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

@@ -1,0 +1,1 @@
+ALTER TABLE "sources" ADD COLUMN "avg_docs_per_tender_30d" real;

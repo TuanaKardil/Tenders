@@ -1,5 +1,5 @@
 import { asc, desc, eq, sql } from "drizzle-orm";
-import { db, sources, ingestionRuns } from "@repo/db";
+import { db, sources, ingestionRuns, tenders } from "@repo/db";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -50,6 +50,26 @@ export default async function AdminSourcesPage() {
     const last2 = runsBySource.get(sourceId) ?? [];
     if (last2.length < 2) return false; // need two runs to call it consecutive
     return last2.every((r) => (r.counts.created ?? 0) === 0 && (r.counts.duplicates ?? 0) === 0);
+  };
+
+  // 6b — coverage anomaly: the last 3 days' avg documents/tender vs the 30-day
+  // baseline. More than 30% below (with a meaningful sample) → amber.
+  const recentDocs = await db
+    .select({
+      sourceId: tenders.sourceId,
+      n: sql<number>`cast(count(*) as int)`,
+      avgDocs: sql<number>`avg(${tenders.documentsCount})::float`,
+    })
+    .from(tenders)
+    .where(sql`${tenders.firstSeenAt} >= now() - interval '3 days'`)
+    .groupBy(tenders.sourceId);
+  const recentBySource = new Map(recentDocs.map((r) => [r.sourceId, r]));
+  const coverageDrop = (source: { id: string; avgDocsPerTender30d: number | null }): boolean => {
+    const baseline = source.avgDocsPerTender30d ?? 0;
+    if (baseline <= 0.1) return false; // no meaningful baseline (source has no docs anyway)
+    const recent = recentBySource.get(source.id);
+    if (!recent || recent.n < 3) return false; // too small a sample to judge
+    return recent.avgDocs < baseline * 0.7;
   };
 
   return (
@@ -113,6 +133,15 @@ export default async function AdminSourcesPage() {
                           title="Son 2 koşuda hiç yeni/mükerrer kayıt gelmedi"
                         >
                           2+ koşu boş
+                        </Badge>
+                      )}
+                      {coverageDrop(source) && (
+                        <Badge
+                          variant="secondary"
+                          className="border-amber-300 bg-amber-100 text-amber-800"
+                          title={`Son 3 günün belge oranı 30 gün ortalamasının (${source.avgDocsPerTender30d?.toFixed(2)}) %30+ altında`}
+                        >
+                          belge oranı düşük
                         </Badge>
                       )}
                     </div>

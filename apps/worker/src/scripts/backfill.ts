@@ -210,6 +210,20 @@ async function main() {
       console.log(`  ? pending [${l.source}] "${l.raw}" ⇒ ${l.enum}? (conf ${l.confidence.toFixed(2)}) → /admin/sozluk`);
   }
 
+  // 6b — refresh each source's 30-day avg documents-per-tender (the baseline
+  // the /admin/sources coverage-anomaly alarm compares the latest run against).
+  await db.execute(sql`
+    update sources s set avg_docs_per_tender_30d = agg.avg_docs
+    from (
+      select source_id, avg(documents_count)::real as avg_docs
+      from tenders
+      where first_seen_at >= now() - interval '30 days'
+      group by source_id
+    ) agg
+    where s.id = agg.source_id
+  `);
+  console.log("  refreshed avg_docs_per_tender_30d for coverage anomaly alarm");
+
   const total = await db.$count(tenders);
   console.log(`Done. tenders table now: ${total}`);
   process.exit(0);
