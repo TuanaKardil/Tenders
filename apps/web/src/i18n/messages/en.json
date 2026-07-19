@@ -58,7 +58,11 @@
   "onboarding": {
     "title": "Set up your first alert in 3 minutes",
     "subtitle": "Tell us what you're looking for — we'll watch every source for you.",
-    "steps": { "sectors": "Sectors", "countries": "Countries", "keywords": "Keywords" },
+    "steps": {
+      "sectors": "Sectors",
+      "countries": "Countries",
+      "keywords": "Keywords"
+    },
     "hints": {
       "sectors": "Pick the sectors you work in.",
       "countries": "Pick the countries you can bid in.",
@@ -77,7 +81,11 @@
     "signInRequired": "Sign in to manage your alerts.",
     "newResults": "new",
     "delete": "Delete",
-    "frequency": { "instant": "Instant", "daily": "Daily", "weekly": "Weekly" },
+    "frequency": {
+      "instant": "Instant",
+      "daily": "Daily",
+      "weekly": "Weekly"
+    },
     "empty": {
       "title": "No alerts yet",
       "hint": "Create your first alert and we'll email you matching tenders.",
@@ -262,5 +270,17 @@
       "title": "Takedown & Corrections",
       "body": "If a notice attributed to your organization is inaccurate, outdated, or should not be listed, tell us and we will review and, where appropriate, correct or remove it promptly. Include the tender link and the reason for your request."
     }
+  },
+  "assistant": {
+    "title": "AI assistant",
+    "intro": "Ask about this tender — deadlines, requirements, documents. Answers come only from this tender's data.",
+    "placeholder": "Ask a question about this tender…",
+    "send": "Ask",
+    "signInCta": "Sign in to ask the AI assistant about this tender.",
+    "signInButton": "Sign in",
+    "error": "Something went wrong — please try again.",
+    "q1": "What documents are required?",
+    "q2": "What is the submission deadline?",
+    "q3": "Who can apply?"
   }
 }

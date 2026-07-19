@@ -1,7 +1,7 @@
 import { loadPrompt } from "./prompts";
+import { openRouterChat } from "@repo/ai/openrouter";
 
-/** Minimal OpenRouter (OpenAI-compatible) client for translate + summarize. */
-const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+// All HTTP goes through the single shared client in @repo/ai.
 const MODEL = "google/gemini-2.5-flash-lite";
 /** OCR / document reading uses the fuller Flash model (better at images/scans). */
 const MODEL_OCR = "google/gemini-2.5-flash";
@@ -59,24 +59,15 @@ export async function translateSummarize(input: TsInput): Promise<TsOutput> {
   add("eligibility_notes", input.eligibility);
   add("document_text", input.documentText);
 
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0.3,
-      response_format: { type: "json_object" },
-      messages: [
+  const { content } = await openRouterChat({
+    model: MODEL,
+    temperature: 0.3,
+    json: true,
+    messages: [
         { role: "system", content: loadPrompt("translate-summarize") },
         { role: "user", content: JSON.stringify(facts) },
       ],
-    }),
   });
-
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${await res.text()}`);
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  const content = json.choices?.[0]?.message?.content;
-  if (!content) throw new Error("empty AI response");
 
   const parsed = JSON.parse(content) as Partial<TsOutput>;
   return {
@@ -139,24 +130,15 @@ export async function classifyTender(input: ClassifyInput): Promise<ClassifyOutp
   add("source_portal", input.source);
   add("description", input.description?.slice(0, 500));
 
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
+  const { content } = await openRouterChat({
+    model: MODEL,
+    temperature: 0,
+    json: true,
+    messages: [
         { role: "system", content: loadPrompt("classification") },
         { role: "user", content: JSON.stringify(facts) },
       ],
-    }),
   });
-
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${await res.text()}`);
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  const content = json.choices?.[0]?.message?.content;
-  if (!content) throw new Error("empty AI response");
 
   const parsed = JSON.parse(content) as Partial<ClassifyOutput>;
   return {
@@ -183,14 +165,11 @@ export async function learnNoticeType(
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("OPENROUTER_API_KEY not set");
 
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
+  const { content } = await openRouterChat({
+    model: MODEL,
+    temperature: 0,
+    json: true,
+    messages: [
         { role: "system", content: loadPrompt("notice-type-learn") },
         {
           role: "user",
@@ -201,13 +180,7 @@ export async function learnNoticeType(
           }),
         },
       ],
-    }),
   });
-
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  const content = json.choices?.[0]?.message?.content;
-  if (!content) throw new Error("empty AI response");
   const p = JSON.parse(content) as { enum?: string; confidence?: number; reasoning_short?: string };
   const conf = typeof p.confidence === "number" ? Math.min(1, Math.max(0, p.confidence)) : 0;
   return { enum: p.enum ?? "unknown", confidence: conf, reasoning: p.reasoning_short ?? "" };
@@ -243,24 +216,15 @@ export async function judgeDuplicate(a: JudgeNotice, b: JudgeNotice): Promise<Ju
     summary: n.summary?.slice(0, 400) ?? undefined,
   });
 
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
+  const { content } = await openRouterChat({
+    model: MODEL,
+    temperature: 0,
+    json: true,
+    messages: [
         { role: "system", content: loadPrompt("dedupe-judge") },
         { role: "user", content: JSON.stringify({ notice_a: strip(a), notice_b: strip(b) }) },
       ],
-    }),
   });
-
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  const content = json.choices?.[0]?.message?.content;
-  if (!content) throw new Error("empty AI response");
   const parsed = JSON.parse(content) as Partial<JudgeVerdict>;
   return {
     // Lean towards NOT merging on malformed output (a duplicate shown twice
@@ -293,28 +257,21 @@ export async function extractTextFromDocument(buffer: Buffer, mime: string): Pro
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("OPENROUTER_API_KEY not set");
 
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL_OCR,
-      temperature: 0,
-      messages: [
-        { role: "system", content: loadPrompt("document-ocr") },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Transcribe every readable character in this document." },
-            documentPart(buffer, mime),
-          ],
-        },
-      ],
-    }),
+  const { content } = await openRouterChat({
+    model: MODEL_OCR,
+    temperature: 0,
+    messages: [
+      { role: "system", content: loadPrompt("document-ocr") },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "Transcribe every readable character in this document." },
+          documentPart(buffer, mime),
+        ],
+      },
+    ],
   });
-
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  return json.choices?.[0]?.message?.content?.trim() ?? "";
+  return content.trim();
 }
 
 // ---------------------------------------------------------------------------
@@ -365,27 +322,15 @@ export async function extractFields(input: FieldInput): Promise<FieldResult> {
   if (input.description?.trim()) facts.description = input.description.trim();
   if (input.documentText?.trim()) facts.document_text = input.documentText.trim();
 
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: loadPrompt("field-extraction") },
-        { role: "user", content: JSON.stringify(facts) },
-      ],
-    }),
+  const { content, usage } = await openRouterChat({
+    model: MODEL,
+    temperature: 0,
+    json: true,
+    messages: [
+      { role: "system", content: loadPrompt("field-extraction") },
+      { role: "user", content: JSON.stringify(facts) },
+    ],
   });
-
-  if (!res.ok) throw new Error(`OpenRouter ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const json = (await res.json()) as {
-    choices?: { message?: { content?: string } }[];
-    usage?: { prompt_tokens?: number; completion_tokens?: number };
-  };
-  const content = json.choices?.[0]?.message?.content;
-  if (!content) throw new Error("empty AI response");
   const p = JSON.parse(content) as Record<string, unknown>;
 
   const confidence = num(p.extraction_confidence);
@@ -409,9 +354,6 @@ export async function extractFields(input: FieldInput): Promise<FieldResult> {
       notice_type_ai: typeof p.notice_type_ai === "string" && p.notice_type_ai.trim() ? p.notice_type_ai.trim() : null,
       extraction_confidence: confidence === null ? null : Math.min(1, Math.max(0, confidence)),
     },
-    usage: {
-      prompt_tokens: json.usage?.prompt_tokens ?? 0,
-      completion_tokens: json.usage?.completion_tokens ?? 0,
-    },
+    usage,
   };
 }

@@ -58,7 +58,11 @@
   "onboarding": {
     "title": "İlk uyarınızı 3 dakikada kurun",
     "subtitle": "Ne aradığınızı söyleyin — tüm kaynakları sizin için izleyelim.",
-    "steps": { "sectors": "Sektörler", "countries": "Ülkeler", "keywords": "Anahtar kelimeler" },
+    "steps": {
+      "sectors": "Sektörler",
+      "countries": "Ülkeler",
+      "keywords": "Anahtar kelimeler"
+    },
     "hints": {
       "sectors": "Çalıştığınız sektörleri seçin.",
       "countries": "Teklif verebileceğiniz ülkeleri seçin.",
@@ -77,7 +81,11 @@
     "signInRequired": "Uyarılarınızı yönetmek için giriş yapın.",
     "newResults": "yeni",
     "delete": "Sil",
-    "frequency": { "instant": "Anında", "daily": "Günlük", "weekly": "Haftalık" },
+    "frequency": {
+      "instant": "Anında",
+      "daily": "Günlük",
+      "weekly": "Haftalık"
+    },
     "empty": {
       "title": "Henüz uyarı yok",
       "hint": "İlk uyarınızı oluşturun, eşleşen ihaleleri e-posta ile gönderelim.",
@@ -262,5 +270,17 @@
       "title": "Kaldırma ve Düzeltme",
       "body": "Kuruluşunuza atfedilen bir ilan hatalı, güncel değil veya listelenmemesi gerekiyorsa bize bildirin; inceleyip uygun olduğunda hızla düzeltir veya kaldırırız. İhale bağlantısını ve talebinizin gerekçesini ekleyin."
     }
+  },
+  "assistant": {
+    "title": "Yapay zeka asistanı",
+    "intro": "Bu ihale hakkında soru sor — son tarih, şartlar, belgeler. Cevaplar yalnızca bu ihalenin verilerinden gelir.",
+    "placeholder": "Bu ihale hakkında bir soru sor…",
+    "send": "Sor",
+    "signInCta": "Asistana soru sormak için giriş yapın.",
+    "signInButton": "Giriş yap",
+    "error": "Bir sorun oluştu — lütfen tekrar deneyin.",
+    "q1": "Hangi belgeler gerekli?",
+    "q2": "Son teklif tarihi ne zaman?",
+    "q3": "Kimler başvurabilir?"
   }
 }

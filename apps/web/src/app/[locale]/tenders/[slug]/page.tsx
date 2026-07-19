@@ -10,6 +10,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { alternatesFor, breadcrumbLd, absoluteUrl } from "@/lib/seo";
 import { TenderCard } from "@/components/tenders/tender-card";
 import { DeadlineChip } from "@/components/tenders/deadline-chip";
+import { TenderAssistant } from "@/components/tender-assistant";
 import { WatchlistButton } from "@/components/tenders/watchlist-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export default async function TenderPage({ params }: TenderPageProps) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("tender");
+  const ta = await getTranslations("assistant");
   const loc = locale === "tr" ? "tr" : "en";
 
   const row = await getTender(slug);
@@ -208,6 +210,21 @@ export default async function TenderPage({ params }: TenderPageProps) {
           )}
         </div>
       </section>
+
+      {/* AI assistant — asks about THIS tender only */}
+      <TenderAssistant
+        tenderId={tender.id}
+        labels={{
+          title: ta("title"),
+          intro: ta("intro"),
+          placeholder: ta("placeholder"),
+          send: ta("send"),
+          signInCta: ta("signInCta"),
+          signInButton: ta("signInButton"),
+          error: ta("error"),
+          suggested: [ta("q1"), ta("q2"), ta("q3")],
+        }}
+      />
 
       {/* Timeline */}
       {timeline.length > 0 && (

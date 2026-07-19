@@ -21,6 +21,11 @@ export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
     await auth.protect();
   }
+  // API routes matched here (e.g. tender QA) only need the Clerk context —
+  // locale routing must not touch them.
+  if (req.nextUrl.pathname.startsWith("/api/")) {
+    return;
+  }
   return intlMiddleware(req);
 });
 
@@ -29,5 +34,8 @@ export const config = {
     // Skip Next internals, static files, /api, and metadata image routes
     // (opengraph/twitter/icon), which must not be locale-redirected.
     "/((?!api|go|_next|_vercel|.*opengraph-image|.*twitter-image|.*icon|.*\\..*).*)",
+    // API routes that read the Clerk session must run through clerkMiddleware
+    // (they skip intl above). auth() in the handler decides 401 — no redirect.
+    "/api/tenders/(.*)/qa",
   ],
 };
