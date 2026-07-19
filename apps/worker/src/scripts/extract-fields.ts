@@ -5,6 +5,7 @@ import { TENDERS_INDEX } from "@repo/config/search";
 import { getMeili } from "../meili";
 import { tenderToDoc } from "../lib/tender-doc";
 import { extractFields, type ExtractedFields } from "../lib/ai";
+import { statusFromClosingAt } from "../lib/normalize";
 
 /**
  * AI structured field extraction (PIPELINE.md stage 5, second half).
@@ -85,6 +86,7 @@ async function main() {
       description: tenders.summaryEn,
       noticeTypeAi: tenders.noticeTypeAi,
       unpublishReason: tenders.unpublishReason,
+      closingAt: tenders.closingAt,
       sourceSlug: sources.slug,
     })
     .from(tenders)
@@ -189,6 +191,17 @@ async function main() {
       completionTok += usage.completion_tokens;
 
       const update = buildUpdate(fields);
+
+      // Closing date from document text — ONLY when the source gave none
+      // (source-provided deadlines are authoritative, AI never overrides).
+      if (fields.closing_date && r.closingAt === null) {
+        const d = new Date(`${fields.closing_date}T00:00:00Z`);
+        const year = d.getUTCFullYear();
+        if (!Number.isNaN(d.getTime()) && year >= 2024 && year <= 2100) {
+          update.closingAt = d;
+          update.status = statusFromClosingAt(d, now);
+        }
+      }
 
       // Publish gate. Classification-dropped tenders stay down no matter what.
       const conf = fields.extraction_confidence;

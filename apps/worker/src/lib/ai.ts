@@ -331,6 +331,8 @@ export interface ExtractedFields {
   cpv_codes: string[];
   eligibility_countries: string[];
   eligibility_notes_en: string | null;
+  /** ISO "YYYY-MM-DD" when the text states an explicit deadline; else null. */
+  closing_date: string | null;
   notice_type_ai: string | null;
   extraction_confidence: number | null;
 }
@@ -393,6 +395,10 @@ export async function extractFields(input: FieldInput): Promise<FieldResult> {
       eligibility_notes_en:
         typeof p.eligibility_notes_en === "string" && p.eligibility_notes_en.trim()
           ? p.eligibility_notes_en.trim()
+          : null,
+      closing_date:
+        typeof p.closing_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.closing_date.trim())
+          ? p.closing_date.trim()
           : null,
       notice_type_ai: typeof p.notice_type_ai === "string" && p.notice_type_ai.trim() ? p.notice_type_ai.trim() : null,
       extraction_confidence: confidence === null ? null : Math.min(1, Math.max(0, confidence)),
