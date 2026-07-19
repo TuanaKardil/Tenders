@@ -130,7 +130,7 @@ export function TenderAssistant({
                     className={
                       m.role === "user"
                         ? "inline-block rounded-lg bg-neutral-900 px-3 py-2 text-sm text-white"
-                        : "inline-block rounded-lg bg-neutral-100 px-3 py-2 text-sm text-neutral-900"
+                        : "inline-block whitespace-pre-wrap rounded-lg bg-neutral-100 px-3 py-2 text-left text-sm text-neutral-900"
                     }
                   >
                     {m.text}
