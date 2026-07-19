@@ -112,6 +112,12 @@ async function backfillSource(slug: string) {
         error: error?.slice(0, 500),
       })
       .where(sql`id = ${run.id}`);
+    // Keep sources.last_run_at in sync so /admin/sources reflects reality
+    // (previously only ingestion_runs was written → page said "never ran").
+    await db
+      .update(sources)
+      .set({ lastRunAt: new Date() })
+      .where(sql`id = ${source.id}`);
   };
 
   let notices: IngestNotice[];
