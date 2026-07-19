@@ -7,6 +7,7 @@ import {
   type TenderQaContext,
 } from "@repo/ai/tender-qa";
 import { getCurrentUser } from "@/server/auth";
+import { retrieveExcerpts } from "@/server/tender-qa-rag";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,13 @@ export async function POST(
     source_url: t.sourceUrl,
     status: t.status,
   };
+
+  // RAG (Phase 2): lazy-chunked document excerpts for THIS tender only.
+  // null = embedding unavailable → answer from structured fields (no error).
+  const excerpts = await retrieveExcerpts(t.id, question, t.languageOriginal);
+  if (excerpts && excerpts.length > 0) {
+    context.document_excerpts = excerpts;
+  }
 
   try {
     const result = await answerTenderQuestion(context, question);

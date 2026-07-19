@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./openrouter": "./src/openrouter.ts",
-    "./tender-qa": "./src/tender-qa.ts"
+    "./tender-qa": "./src/tender-qa.ts",
+    "./embeddings": "./src/embeddings.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

@@ -211,6 +211,32 @@ export const noticeTypeMappings = pgTable(
   (t) => [uniqueIndex("notice_type_mappings_uq").on(t.sourceSlug, t.rawText)]
 );
 
+/**
+ * RAG chunks for the tender QA assistant — built LAZILY on a tender's first
+ * question from documents.extracted_text (~1000 chars, 150 overlap).
+ * Separate from tender_embeddings (dedup/alerts) by design; embeddings here
+ * use Gemini task types (RETRIEVAL_DOCUMENT vs RETRIEVAL_QUERY).
+ */
+export const tenderDocumentChunks = pgTable(
+  "tender_document_chunks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenderId: uuid("tender_id")
+      .notNull()
+      .references(() => tenders.id, { onDelete: "cascade" }),
+    documentId: uuid("document_id")
+      .notNull()
+      .references(() => documents.id, { onDelete: "cascade" }),
+    chunkText: text("chunk_text").notNull(),
+    embedding: vector("embedding", { dimensions: 768 }).notNull(),
+    pageNumber: integer("page_number"),
+    sectionTitle: text("section_title"),
+    language: char("language", { length: 2 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("tender_document_chunks_tender_idx").on(t.tenderId)]
+);
+
 /** Title+summary embedding per tender — Tier 2 dedup candidate generation. */
 export const tenderEmbeddings = pgTable("tender_embeddings", {
   tenderId: uuid("tender_id")
