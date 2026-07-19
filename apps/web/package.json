@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "eval:qa": "tsx --env-file=.env.local src/server/eval/tender-qa-eval.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -54,6 +55,7 @@
     "eslint-import-resolver-typescript": "^4.4.5",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^3.1.0"
+    "vitest": "^3.1.0",
+    "tsx": "^4.19.0"
   }
 }

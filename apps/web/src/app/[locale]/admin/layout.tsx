@@ -10,6 +10,7 @@ const NAV = [
   { href: "/admin/eleme", label: "Elenenler" },
   { href: "/admin/sozluk", label: "Sözlük" },
   { href: "/admin/clusters", label: "Cluster'lar" },
+  { href: "/admin/asistan", label: "Asistan" },
   { href: "/admin/sources", label: "Kaynaklar" },
   { href: "/admin/runs", label: "Çekim kayıtları" },
 ];
