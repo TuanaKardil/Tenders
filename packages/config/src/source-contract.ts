@@ -57,3 +57,16 @@ export interface SourceConfig {
 
 /** Convenience: what adapters return (the ingest notice shape). */
 export type ContractNotice = IngestNotice;
+
+/**
+ * Source slugs whose scraper fetches a detail page per notice
+ * (requiresDetailFetch = true). For these, documents_count = 0 is a red flag
+ * (we looked and found nothing). For the others it just means "we don't fetch
+ * detail pages yet" — see docs/BACKLOG.md. Keep in sync as sources migrate to
+ * the contract.
+ */
+export const DETAIL_FETCH_SOURCES: readonly string[] = ["gn-jao"];
+
+export function requiresDetailFetch(sourceSlug: string): boolean {
+  return DETAIL_FETCH_SOURCES.includes(sourceSlug);
+}

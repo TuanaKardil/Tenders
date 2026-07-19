@@ -1,5 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { db, tenders, sources } from "@repo/db";
+import { DETAIL_FETCH_SOURCES } from "@repo/config/source-contract";
+import { Link } from "@/i18n/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +118,26 @@ export default async function AdminCoveragePage() {
     .innerJoin(sources, eq(tenders.sourceId, sources.id))
     .groupBy(sources.slug)
     .orderBy(sql`count(*) desc`);
+
+  // 6a — detail-fetch sources with documents_count = 0 (we looked, found none).
+  const zeroDocsBySource: Record<string, { count: number; samples: { id: string; title: string }[] }> = {};
+  if (DETAIL_FETCH_SOURCES.length > 0) {
+    for (const slug of DETAIL_FETCH_SOURCES) {
+      const [{ n }] = await db
+        .select({ n: sql<number>`cast(count(*) as int)` })
+        .from(tenders)
+        .innerJoin(sources, eq(tenders.sourceId, sources.id))
+        .where(sql`${sources.slug} = ${slug} and ${tenders.documentsCount} = 0`);
+      const samples = await db
+        .select({ id: tenders.id, title: tenders.titleOriginal })
+        .from(tenders)
+        .innerJoin(sources, eq(tenders.sourceId, sources.id))
+        .where(sql`${sources.slug} = ${slug} and ${tenders.documentsCount} = 0`)
+        .orderBy(sql`${tenders.firstSeenAt} desc`)
+        .limit(10);
+      if (n > 0) zeroDocsBySource[slug] = { count: n, samples };
+    }
+  }
 
   return (
     <div>
@@ -236,6 +258,38 @@ export default async function AdminCoveragePage() {
           </tbody>
         </table>
       </div>
+
+      {/* 6a — document suspicion: detail fetched, still no documents */}
+      <h2 className="mb-1 mt-10 text-lg font-semibold">Belge şüphesi — detay çekildi, belge yok</h2>
+      <p className="mb-4 max-w-3xl text-sm text-neutral-500">
+        Detay sayfası çekilen kaynaklarda (<code className="rounded bg-neutral-100 px-1">requiresDetailFetch</code>){" "}
+        belge sayısı 0 olan ihaleler. Bunlar &quot;belge yok&quot; değil, &quot;baktık ama bulamadık&quot; olabilir —
+        seçici kırılmış olabilir. Detay çekilmeyen kaynaklar (UNGM/Uganda/Etiyopya) burada gösterilmez.
+      </p>
+      {Object.keys(zeroDocsBySource).length === 0 ? (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          Detay çekilen kaynaklarda belgesiz ihale yok.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {Object.entries(zeroDocsBySource).map(([slug, data]) => (
+            <div key={slug} className="rounded-lg border border-amber-200 bg-white p-4">
+              <div className="mb-2 text-sm font-semibold">
+                {SOURCE_TR[slug] ?? slug} · <span className="text-amber-700">{data.count} belgesiz ihale</span>
+              </div>
+              <ul className="space-y-1 text-xs">
+                {data.samples.map((t) => (
+                  <li key={t.id}>
+                    <Link href={`/admin/tenders/${t.id}`} className="text-neutral-700 hover:underline">
+                      {t.title.slice(0, 90)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
