@@ -1,11 +1,10 @@
 import { eq, asc, isNotNull } from "drizzle-orm";
 import { db, tenders, documents, sources } from "@repo/db";
-import { SECTOR_SLUGS } from "@repo/config/constants";
 import { TENDERS_INDEX } from "@repo/config/search";
 import { getMeili } from "../meili";
 import { tenderToDoc } from "../lib/tender-doc";
-import { extractFields, type ExtractedFields } from "../lib/ai";
-import { statusFromClosingAt } from "../lib/normalize";
+import { extractFields } from "../lib/ai";
+import { mergeExtractedFields, joinDocTexts } from "../lib/merge-tender";
 
 /**
  * AI structured field extraction (PIPELINE.md stage 5, second half).
@@ -50,33 +49,10 @@ const COST_STOP = 5; // USD — stop and ask above this
 const PRICE_IN = 0.1;
 const PRICE_OUT = 0.4;
 
-const VALID_SECTORS = new Set<string>(SECTOR_SLUGS);
-
 function costUsd(promptTok: number, completionTok: number): number {
   return (promptTok * PRICE_IN + completionTok * PRICE_OUT) / 1_000_000;
 }
-
-/** Build the update object — only fields the AI actually returned (coalesce). */
-function buildUpdate(f: ExtractedFields) {
-  const u: Record<string, unknown> = {};
-  if (f.estimated_value_min !== null) u.estimatedValueMin = String(f.estimated_value_min);
-  if (f.estimated_value_max !== null) u.estimatedValueMax = String(f.estimated_value_max);
-  if (f.currency) u.currency = f.currency.slice(0, 3);
-  // Only accept a real, known sector slug; ignore "unknown" and hallucinated slugs.
-  if (f.sector_primary && f.sector_primary !== "unknown" && VALID_SECTORS.has(f.sector_primary)) {
-    u.sectorPrimary = f.sector_primary;
-  }
-  const secondary = f.sectors_secondary.filter((s) => VALID_SECTORS.has(s) && s !== f.sector_primary);
-  if (secondary.length) u.sectorsSecondary = secondary;
-  if (f.cpv_codes.length) u.cpvCodes = f.cpv_codes;
-  if (f.eligibility_countries.length) {
-    u.eligibilityCountries = f.eligibility_countries.filter((c) => /^[A-Z]{2}$/.test(c));
-  }
-  if (f.eligibility_notes_en) u.eligibilityNotesEn = f.eligibility_notes_en;
-  if (f.notice_type_ai) u.noticeTypeAi = f.notice_type_ai;
-  if (f.extraction_confidence !== null) u.extractionConfidence = f.extraction_confidence;
-  return u;
-}
+// All fill/coalesce/provenance rules live in ONE place: lib/merge-tender.ts.
 
 async function main() {
   const rows = await db
@@ -87,6 +63,10 @@ async function main() {
       noticeTypeAi: tenders.noticeTypeAi,
       unpublishReason: tenders.unpublishReason,
       closingAt: tenders.closingAt,
+      estimatedValueMax: tenders.estimatedValueMax,
+      currency: tenders.currency,
+      eligibilityNotesEn: tenders.eligibilityNotesEn,
+      fieldProvenance: tenders.fieldProvenance,
       sourceSlug: sources.slug,
     })
     .from(tenders)
@@ -126,14 +106,13 @@ async function main() {
     console.log(`  budget: est $${est.toFixed(2)} ≤ cap $${maxCost} ✓`);
   }
 
-  // Pull + cap the document text for a tender.
+  // Pull + cap the combined text of ALL of a tender's documents.
   async function docTextFor(tenderId: string): Promise<string> {
     const docs = await db
       .select({ txt: documents.extractedText })
       .from(documents)
       .where(eq(documents.tenderId, tenderId));
-    const joined = docs.map((d) => d.txt ?? "").filter(Boolean).join("\n\n---\n\n");
-    return joined.slice(0, DOC_CHAR_CAP);
+    return joinDocTexts(docs.map((d) => d.txt), DOC_CHAR_CAP);
   }
 
   // ---- DRY: sample a few, print fields, extrapolate cost, stop. ----
@@ -190,18 +169,19 @@ async function main() {
       promptTok += usage.prompt_tokens;
       completionTok += usage.completion_tokens;
 
-      const update = buildUpdate(fields);
-
-      // Closing date from document text — ONLY when the source gave none
-      // (source-provided deadlines are authoritative, AI never overrides).
-      if (fields.closing_date && r.closingAt === null) {
-        const d = new Date(`${fields.closing_date}T00:00:00Z`);
-        const year = d.getUTCFullYear();
-        if (!Number.isNaN(d.getTime()) && year >= 2024 && year <= 2100) {
-          update.closingAt = d;
-          update.status = statusFromClosingAt(d, now);
-        }
-      }
+      // Single merge rule (fill priority + no-downgrade + provenance).
+      const { update } = mergeExtractedFields(
+        {
+          closingAt: r.closingAt,
+          estimatedValueMax: r.estimatedValueMax,
+          currency: r.currency,
+          eligibilityNotesEn: r.eligibilityNotesEn,
+          fieldProvenance: r.fieldProvenance,
+        },
+        fields,
+        documentText.length > 0,
+        now
+      );
 
       // Publish gate. Classification-dropped tenders stay down no matter what.
       const conf = fields.extraction_confidence;

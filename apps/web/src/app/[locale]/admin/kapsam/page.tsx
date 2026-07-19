@@ -40,6 +40,24 @@ const FIELDS: { key: string; label: string }[] = [
   { key: "eligibility", label: "Uygunluk" },
 ];
 
+/** Critical fields tracked in tenders.field_provenance. */
+const PROV_FIELDS: { key: string; label: string }[] = [
+  { key: "closing_at", label: "Son teklif t." },
+  { key: "published_at", label: "Yayın t." },
+  { key: "estimated_value", label: "Bedel" },
+  { key: "currency", label: "Para birimi" },
+  { key: "buyer", label: "Alıcı" },
+  { key: "eligibility", label: "Uygunluk" },
+  { key: "notice_type", label: "İhale türü" },
+];
+
+const ORIGIN_TR: Record<string, string> = {
+  source_page: "sayfa",
+  document: "belge",
+  ai_page_text: "metin",
+  manual: "elle",
+};
+
 function cellColor(pct: number): string {
   if (pct >= 90) return "bg-emerald-100 text-emerald-800";
   if (pct >= 50) return "bg-amber-100 text-amber-800";
@@ -74,6 +92,29 @@ export default async function AdminCoveragePage() {
     .from(tenders)
     .innerJoin(sources, eq(tenders.sourceId, sources.id))
     .groupBy(sources.slug, sources.url)
+    .orderBy(sql`count(*) desc`);
+
+  // Provenance matrix rows — fill% + dominant origin per critical field,
+  // produced entirely from tenders.field_provenance (no manual input).
+  const provCol = (k: string) => ({
+    [`${k}_n`]: sql<number>`cast(count(*) filter (where ${tenders.fieldProvenance} ? ${k}) as int)`,
+    [`${k}_o`]: sql<string | null>`mode() within group (order by ${tenders.fieldProvenance}->>${k})`,
+  });
+  const provRows = await db
+    .select({
+      slug: sources.slug,
+      total: sql<number>`cast(count(*) as int)`,
+      ...provCol("closing_at"),
+      ...provCol("published_at"),
+      ...provCol("estimated_value"),
+      ...provCol("currency"),
+      ...provCol("buyer"),
+      ...provCol("eligibility"),
+      ...provCol("notice_type"),
+    })
+    .from(tenders)
+    .innerJoin(sources, eq(tenders.sourceId, sources.id))
+    .groupBy(sources.slug)
     .orderBy(sql`count(*) desc`);
 
   return (
@@ -150,6 +191,50 @@ export default async function AdminCoveragePage() {
         <span><span className="mr-1 inline-block size-3 rounded bg-amber-100 align-middle" /> %50–89</span>
         <span><span className="mr-1 inline-block size-3 rounded bg-orange-100 align-middle" /> %1–49</span>
         <span><span className="mr-1 inline-block size-3 rounded bg-neutral-100 align-middle" /> yok (%0)</span>
+      </div>
+
+      {/* Provenance matrix — where each critical field's value comes from */}
+      <h2 className="mb-1 mt-10 text-lg font-semibold">Alan kökeni (field_provenance)</h2>
+      <p className="mb-4 max-w-3xl text-sm text-neutral-500">
+        Kritik alanların değeri nereden geliyor: <b>sayfa</b> = kaynağın yapılandırılmış verisi,{" "}
+        <b>belge</b> = ekli PDF/Word&apos;den AI çıkarımı, <b>metin</b> = sayfa metninden AI. Hücre:
+        doluluk yüzdesi + baskın köken.
+      </p>
+      <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
+        <table className="border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-neutral-200">
+              <th className="px-4 py-2 text-left font-medium text-neutral-500">Kaynak</th>
+              {PROV_FIELDS.map((f) => (
+                <th key={f.key} className="whitespace-nowrap px-3 py-2 text-center text-xs font-medium text-neutral-500">
+                  {f.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {provRows.map((s) => (
+              <tr key={s.slug} className="border-b border-neutral-100">
+                <td className="whitespace-nowrap px-4 py-2 font-semibold">{SOURCE_TR[s.slug] ?? s.slug}</td>
+                {PROV_FIELDS.map((f) => {
+                  const filled = (s as unknown as Record<string, number>)[`${f.key}_n`] ?? 0;
+                  const origin = (s as unknown as Record<string, string | null>)[`${f.key}_o`];
+                  const pct = s.total > 0 ? Math.round((filled / s.total) * 100) : 0;
+                  return (
+                    <td key={f.key} className="px-2 py-1.5 text-center">
+                      <span className={`inline-block min-w-[3.4rem] rounded px-1.5 py-1 text-xs font-medium ${cellColor(pct)}`}>
+                        %{pct}
+                        <span className="block text-[10px] font-normal opacity-75">
+                          {origin ? ORIGIN_TR[origin] ?? origin : "—"}
+                        </span>
+                      </span>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

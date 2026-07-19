@@ -8,6 +8,7 @@ import {
   integer,
   numeric,
   real,
+  jsonb,
   index,
   uniqueIndex,
   vector,
@@ -97,6 +98,16 @@ export const tenders = pgTable(
     unpublishReason: text("unpublish_reason"),
     /** 0..1 — below 0.7 lands in the admin review queue. */
     extractionConfidence: real("extraction_confidence"),
+    /**
+     * Where each critical field's value came from:
+     * "source_page" | "document" | "ai_page_text" | "manual".
+     * Keys: closing_at, published_at, estimated_value, currency, buyer,
+     * eligibility, notice_type. Written by the single merge function.
+     */
+    fieldProvenance: jsonb("field_provenance")
+      .$type<Record<string, string>>()
+      .notNull()
+      .default({}),
     qualityScore: real("quality_score"),
     isPublished: boolean("is_published").notNull().default(false),
 

@@ -1,0 +1,1 @@
+ALTER TABLE "tenders" ADD COLUMN "field_provenance" jsonb DEFAULT '{}'::jsonb NOT NULL;

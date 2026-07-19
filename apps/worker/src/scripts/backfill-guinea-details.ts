@@ -52,6 +52,7 @@ async function main() {
         const closingAt = new Date(d.closing_at);
         update.closingAt = closingAt;
         update.status = statusFromClosingAt(closingAt, now);
+        update.fieldProvenance = { ...t.fieldProvenance, closing_at: "source_page" };
       }
       await db.update(tenders).set(update).where(eq(tenders.id, t.id));
 

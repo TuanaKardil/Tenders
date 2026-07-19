@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db, rawNotices, tenders, sources } from "@repo/db";
 import { QUEUES, type NormalizeJob, ingestNoticeSchema } from "@repo/config";
 import { createNoticeTypeResolver } from "../lib/notice-type-resolver";
+import { sourceProvenance } from "../lib/merge-tender";
 import { connection } from "../connection";
 import { enqueueIndexSync } from "../queues";
 import {
@@ -99,6 +100,7 @@ export async function processNormalizeJob(job: Job<NormalizeJob>) {
     eligibilityCountries: data.eligibility_countries ?? [],
     eligibilityNotesEn: data.eligibility_notes ?? null,
     documentsCount: data.documents?.length ?? 0,
+    fieldProvenance: sourceProvenance(data),
     status: statusFromClosingAt(toDate(data.closing_at), now),
     extractionConfidence: confidence,
     qualityScore: qualityScore(data),

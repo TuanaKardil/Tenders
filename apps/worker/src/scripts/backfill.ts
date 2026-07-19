@@ -3,6 +3,7 @@ import { db, tenders, sources, ingestionRuns } from "@repo/db";
 import { TENDERS_INDEX } from "@repo/config/search";
 import type { IngestNotice } from "@repo/config/ingest";
 import { createNoticeTypeResolver } from "../lib/notice-type-resolver";
+import { sourceProvenance } from "../lib/merge-tender";
 import { getMeili } from "../meili";
 import { tenderToDoc } from "../lib/tender-doc";
 import {
@@ -156,6 +157,7 @@ async function backfillSource(slug: string) {
         extractionConfidence: confidence,
         qualityScore: qualityScore(data),
         isPublished: confidence >= 0.7,
+        fieldProvenance: sourceProvenance(data),
         firstSeenAt: now,
         lastSeenAt: now,
       })

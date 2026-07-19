@@ -57,6 +57,13 @@
       "when": 1784412493319,
       "tag": "0007_black_jocasta",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784456687849,
+      "tag": "0008_modern_rocket_raccoon",
+      "breakpoints": true
     }
   ]
 }
