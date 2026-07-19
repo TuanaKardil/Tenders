@@ -11,6 +11,8 @@ const strings = {
       `${n} new tender${n === 1 ? "" : "s"} matched your saved search since the last alert.`,
     cta: "View all matches",
     more: (n: number) => `+ ${n} more on Tenderlist`,
+    related: "Possibly relevant tenders",
+    relatedNote: "Not exact keyword matches — surfaced because their content is semantically close to your search.",
   },
   tr: {
     preview: (n: number, name: string) => `“${name}” için ${n} yeni ihale`,
@@ -18,6 +20,8 @@ const strings = {
     intro: (n: number) => `Son uyarıdan bu yana kayıtlı aramanızla ${n} yeni ihale eşleşti.`,
     cta: "Tüm eşleşmeleri gör",
     more: (n: number) => `+ Tenderlist'te ${n} ihale daha`,
+    related: "İlgili olabilecek ihaleler",
+    relatedNote: "Birebir kelime eşleşmesi değil — içerikleri aramanıza anlamca yakın olduğu için gösteriliyor.",
   },
 } as const;
 
@@ -28,6 +32,8 @@ export interface AlertDigestProps {
   searchUrl: string;
   tenders: EmailTender[];
   totalCount: number;
+  /** Semantic-only matches, shown in a separate "possibly relevant" section. */
+  relatedTenders?: EmailTender[];
 }
 
 const MAX_ROWS = 8;
@@ -39,6 +45,7 @@ export default function AlertDigestEmail({
   searchUrl,
   tenders,
   totalCount,
+  relatedTenders = [],
 }: AlertDigestProps) {
   const t = strings[locale];
   const shown = tenders.slice(0, MAX_ROWS);
@@ -59,6 +66,20 @@ export default function AlertDigestEmail({
 
       {remaining > 0 && (
         <Text style={{ fontSize: "13px", color: "#6b7280" }}>{t.more(remaining)}</Text>
+      )}
+
+      {relatedTenders.length > 0 && (
+        <>
+          <Heading as="h2" style={{ fontSize: "16px", margin: "24px 0 4px", color: "#111827" }}>
+            {t.related}
+          </Heading>
+          <Text style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 12px" }}>
+            {t.relatedNote}
+          </Text>
+          {relatedTenders.slice(0, MAX_ROWS).map((tender) => (
+            <TenderRow key={tender.slug} tender={tender} locale={locale} appUrl={appUrl} />
+          ))}
+        </>
       )}
 
       <Button

@@ -86,3 +86,85 @@ export async function ensureSearchEmbedding(search: {
     .where(eq(savedSearches.id, search.id));
   return vec ?? null;
 }
+
+// ---------------------------------------------------------------------------
+// Two-path alert matching: keyword (Meili) ∪ semantic (embeddings).
+
+import { inArray } from "drizzle-orm";
+import { tenderEmbeddings } from "@repo/db";
+import { SEMANTIC_ALERT_THRESHOLD } from "@repo/config/alerts";
+import { TENDERS_INDEX, buildMeiliFilter, type TenderDoc } from "@repo/config";
+import { getMeili } from "../meili";
+import { cosine } from "./embeddings";
+
+export type MatchType = "keyword" | "semantic" | "both";
+
+export interface MatchResult {
+  hits: TenderDoc[];
+  /** tender id → how it matched. */
+  matchTypes: Record<string, MatchType>;
+  totalKeyword: number;
+}
+
+/**
+ * Match one saved search against the index.
+ * Path A (keyword): the existing Meili query — filters + q.
+ * Path B (semantic): the SAME hard filters (country/date/etc. via Meili with
+ * an empty q — never semantically bypassed), then cosine(search, tender)
+ * ≥ SEMANTIC_ALERT_THRESHOLD on the candidates.
+ * Union, labelled keyword | semantic | both.
+ */
+export async function matchSavedSearch(
+  query: SavedSearchQuery,
+  lastRunAt: Date | null,
+  searchEmbedding: number[] | null
+): Promise<MatchResult> {
+  const index = getMeili().index<TenderDoc>(TENDERS_INDEX);
+  const filters = queryToFilters(query, lastRunAt);
+  const meiliFilter = buildMeiliFilter(filters);
+
+  // Path A — keyword.
+  const kw = await index.search(filters.q ?? "", {
+    filter: meiliFilter,
+    limit: 20,
+    sort: ["published_at:desc"],
+  });
+  const matchTypes: Record<string, MatchType> = {};
+  const byId = new Map<string, TenderDoc>();
+  for (const h of kw.hits) {
+    matchTypes[h.id] = "keyword";
+    byId.set(h.id, h);
+  }
+
+  // Path B — semantic, over hard-filtered candidates only.
+  if (searchEmbedding) {
+    const candidates = await index.search("", {
+      filter: meiliFilter,
+      limit: 200,
+      sort: ["published_at:desc"],
+    });
+    const candById = new Map(candidates.hits.map((h) => [h.id, h]));
+    const ids = [...candById.keys()];
+    if (ids.length > 0) {
+      const embs = await db
+        .select({ id: tenderEmbeddings.tenderId, emb: tenderEmbeddings.embedding })
+        .from(tenderEmbeddings)
+        .where(inArray(tenderEmbeddings.tenderId, ids));
+      for (const e of embs) {
+        if (cosine(searchEmbedding, e.emb) < SEMANTIC_ALERT_THRESHOLD) continue;
+        if (matchTypes[e.id]) {
+          matchTypes[e.id] = "both";
+        } else {
+          matchTypes[e.id] = "semantic";
+          byId.set(e.id, candById.get(e.id)!);
+        }
+      }
+    }
+  }
+
+  return {
+    hits: [...byId.values()],
+    matchTypes,
+    totalKeyword: kw.estimatedTotalHits ?? kw.hits.length,
+  };
+}

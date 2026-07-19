@@ -11,7 +11,23 @@ import {
 import { connection } from "../connection";
 import { getMeili } from "../meili";
 import { enqueueEmailDispatch } from "../queues";
-import { queryToFilters, searchUrlFor } from "../lib/alerts";
+import {
+  queryToFilters,
+  searchUrlFor,
+  ensureSearchEmbedding,
+  matchSavedSearch,
+} from "../lib/alerts";
+
+function emailTender(h: TenderDoc, locale: string) {
+  return {
+    slug: h.slug,
+    title: locale === "tr" && h.title_tr ? h.title_tr : h.title_en,
+    country: h.country,
+    buyerName: h.buyer_name,
+    closingAt: h.closing_at ? new Date(h.closing_at * 1000).toISOString().slice(0, 10) : null,
+    valueUsd: h.value_usd_est ? `$${Math.round(h.value_usd_est).toLocaleString("en-US")}` : null,
+  };
+}
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://tenderlist.app";
 
@@ -39,15 +55,17 @@ export async function processAlertBatch(job: Job<AlertBatchJob> | { data: AlertB
 
   for (const { search, user } of searches) {
     const runStartedAt = new Date();
-    const filters = queryToFilters(search.query, search.lastRunAt);
 
-    const result = await index.search(filters.q ?? "", {
-      filter: buildMeiliFilter(filters),
-      limit: 20,
-      sort: ["published_at:desc"],
-    });
-    const hits = result.hits;
-    const total = result.estimatedTotalHits ?? hits.length;
+    // Two-path matching (keyword ∪ semantic) — same engine as run-alerts.ts.
+    const embedding = await ensureSearchEmbedding(search);
+    const { hits, matchTypes, totalKeyword } = await matchSavedSearch(
+      search.query,
+      search.lastRunAt,
+      embedding
+    );
+    const mainHits = hits.filter((h) => matchTypes[h.id] !== "semantic");
+    const related = hits.filter((h) => matchTypes[h.id] === "semantic");
+    const total = totalKeyword + related.length;
 
     if (hits.length === 0) {
       empty += 1;
@@ -69,18 +87,8 @@ export async function processAlertBatch(job: Job<AlertBatchJob> | { data: AlertB
           searchName: search.name,
           searchUrl: searchUrlFor(search.query, APP_URL),
           totalCount: total,
-          tenders: hits.map((h) => ({
-            slug: h.slug,
-            title: user.locale === "tr" && h.title_tr ? h.title_tr : h.title_en,
-            country: h.country,
-            buyerName: h.buyer_name,
-            closingAt: h.closing_at
-              ? new Date(h.closing_at * 1000).toISOString().slice(0, 10)
-              : null,
-            valueUsd: h.value_usd_est
-              ? `$${Math.round(h.value_usd_est).toLocaleString("en-US")}`
-              : null,
-          })),
+          tenders: mainHits.map((h) => emailTender(h, user.locale)),
+          relatedTenders: related.map((h) => emailTender(h, user.locale)),
         },
       });
       sent += 1;
