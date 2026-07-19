@@ -1,6 +1,11 @@
 import * as cheerio from "cheerio";
 import type { IngestNotice } from "@repo/config/ingest";
-import { fetchHtml } from "./shared";
+import {
+  DESCRIPTION_SNIPPET_MAX,
+  type DetailPageData,
+  type SourceConfig,
+} from "@repo/config/source-contract";
+import { fetchHtml, politeFetchHtml } from "./shared";
 
 /**
  * Guinea — jaoguinee.com, "Journal des Appels d'Offres" (private notice
@@ -18,6 +23,15 @@ import { fetchHtml } from "./shared";
 const BASE = "https://www.jaoguinee.com";
 const CATEGORY = `${BASE}/category/appels-d-offres/`;
 const MAX_PAGES = 20;
+
+/** Source-contract declaration (first source written against the contract). */
+export const SOURCE_CONFIG: SourceConfig = {
+  sourceSlug: "gn-jao",
+  listPageStrategy: "wordpress-category",
+  detailPageStrategy: "html",
+  licenseClass: "yellow",
+  requiresDetailFetch: true,
+};
 
 /** Recency window in days; first backfill can widen via GN_SINCE_DAYS. */
 function windowDays(): number {
@@ -76,6 +90,64 @@ export function extractTypeRaw(title: string): string {
   return t.split(" ").slice(0, 5).join(" ");
 }
 
+/** Deadline phrases seen on the portal ("Date limite de remise des candidatures 31 Juillet 2026"). */
+const DEADLINE_RES: RegExp[] = [
+  /date limite[^.]{0,80}?(\d{1,2}(?:er)?\s+[a-zûé]+\s+\d{4})/i,
+  /au plus tard le\s+(?:\w+\s+)?(\d{1,2}(?:er)?\s+[a-zûé]+\s+\d{4})/i,
+  /avant le\s+(\d{1,2}(?:er)?\s+[a-zûé]+\s+\d{4})/i,
+  /d[ée]lai de (?:remise|d[ée]p[ôo]t)[^.]{0,60}?(\d{1,2}(?:er)?\s+[a-zûé]+\s+\d{4})/i,
+];
+
+const DOC_EXT_RE = /\.(pdf|docx?|xlsx?)(?:\?|#|$)/i;
+
+/**
+ * Contract-standard detail fetch. Extracts closing date (when the body states
+ * one), attachment links (absolute URLs) and a ≤300-char description snippet.
+ * The full body is NEVER returned — yellow-license red line.
+ */
+export async function fetchDetail(url: string): Promise<DetailPageData> {
+  const html = await politeFetchHtml(url);
+  const $ = cheerio.load(html);
+
+  // Content area only (skip nav/footer); Elementor post content widget.
+  const content = $(".elementor-widget-theme-post-content").first();
+  const scope = content.length ? content : $("body");
+  const text = scope.text().replace(/\s+/g, " ").trim();
+
+  // Closing date from body phrases; "1er" → "1".
+  let closing: string | undefined;
+  for (const re of DEADLINE_RES) {
+    const m = text.match(re);
+    if (m?.[1]) {
+      closing = parseFrenchDate(m[1].replace(/(\d{1,2})er/, "$1"));
+      if (closing) break;
+    }
+  }
+
+  // Attachment links (dedupe, absolutize).
+  const seen = new Set<string>();
+  const documents: DetailPageData["documents"] = [];
+  scope.find("a[href]").each((_, el) => {
+    const href = $(el).attr("href");
+    if (!href || !DOC_EXT_RE.test(href)) return;
+    const abs = href.startsWith("http") ? href : `${BASE}${href.startsWith("/") ? "" : "/"}${href}`;
+    if (seen.has(abs)) return;
+    seen.add(abs);
+    const label = $(el).text().replace(/\s+/g, " ").trim();
+    documents.push({
+      title: label && label.length > 3 ? label.slice(0, 200) : undefined,
+      url: abs,
+      file_type: abs.toLowerCase().match(DOC_EXT_RE)?.[1],
+    });
+  });
+
+  return {
+    closing_at: closing,
+    description_snippet: text.slice(0, DESCRIPTION_SNIPPET_MAX) || undefined,
+    documents,
+  };
+}
+
 export async function fetchGuinea(): Promise<IngestNotice[]> {
   const out: IngestNotice[] = [];
   const seen = new Set<string>();
@@ -122,9 +194,22 @@ export async function fetchGuinea(): Promise<IngestNotice[]> {
         country: "GN",
         notice_type: extractTypeRaw(title),
         published_at: published.toISOString(),
-        // YELLOW license: metadata only — no body text, no closing date on list.
+        // YELLOW license: metadata only — full body text never stored.
       });
     });
+  }
+
+  // Contract: requiresDetailFetch — enrich every notice from its detail page
+  // (closing date, attachments, ≤300-char snippet). Detail wins over list.
+  for (const n of out) {
+    try {
+      const d = await fetchDetail(n.source_url);
+      if (d.closing_at) n.closing_at = d.closing_at;
+      if (d.description_snippet) n.description = d.description_snippet;
+      if (d.documents.length) n.documents = d.documents;
+    } catch {
+      // Detail page down → the list-level notice still flows (fields stay null).
+    }
   }
 
   return out;

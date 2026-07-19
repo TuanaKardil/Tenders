@@ -1,4 +1,4 @@
-import { desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db, tenders, sources, documents } from "@repo/db";
 import { TENDERS_INDEX } from "@repo/config/search";
 import { getMeili } from "../meili";
@@ -17,6 +17,9 @@ const limitArg = args.find((a) => /^\d+$/.test(a));
 const limit = limitArg ? Number(limitArg) : null;
 const dry = args.includes("--dry");
 const all = args.includes("--all"); // reprocess every tender, not just untranslated
+// --source <slug>: restrict to one source (targeted backfills).
+const sourceIdx = args.indexOf("--source");
+const sourceFilter = sourceIdx > -1 ? args[sourceIdx + 1] ?? null : null;
 
 function isoDate(d: Date | null): string | null {
   return d ? d.toISOString().slice(0, 10) : null;
@@ -34,7 +37,12 @@ async function main() {
     .select({ t: tenders, source: sources })
     .from(tenders)
     .innerJoin(sources, eq(tenders.sourceId, sources.id))
-    .where(all ? undefined : isNull(tenders.titleTr))
+    .where(
+      and(
+        all ? undefined : isNull(tenders.titleTr),
+        sourceFilter ? eq(sources.slug, sourceFilter) : undefined
+      )
+    )
     .orderBy(desc(tenders.firstSeenAt))
     .limit(limit ?? 100_000);
 

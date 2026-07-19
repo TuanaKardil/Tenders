@@ -103,12 +103,26 @@ export default async function AdminCoveragePage() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((s) => (
+            {rows.map((s) => {
+              // Source-health signal: document coverage below 20% usually means
+              // the scraper skips the detail page (the "Guinea mistake").
+              const docPct = s.total > 0 ? Math.round((s.docs / s.total) * 100) : 0;
+              const lowDocs = docPct < 20;
+              return (
               <tr key={s.slug} className="border-b border-neutral-100">
-                <td className="sticky left-0 z-10 bg-white px-4 py-2 whitespace-nowrap">
-                  <div className="font-semibold text-neutral-900">{SOURCE_TR[s.slug] ?? s.slug}</div>
+                <td
+                  className={`sticky left-0 z-10 px-4 py-2 whitespace-nowrap ${lowDocs ? "bg-amber-50" : "bg-white"}`}
+                  title={lowDocs ? `Belge kapsama %${docPct} — detay sayfası çekimi eksik olabilir` : undefined}
+                >
+                  <div className="font-semibold text-neutral-900">
+                    {SOURCE_TR[s.slug] ?? s.slug}
+                    {lowDocs && <span className="ml-1 text-amber-600">⚠</span>}
+                  </div>
                   <div className="text-xs text-neutral-400">{host(s.url)}</div>
                   <div className="text-xs text-neutral-400">{s.total} ihale · {s.langs}</div>
+                  {lowDocs && (
+                    <div className="text-xs font-medium text-amber-700">belge kapsama %{docPct}</div>
+                  )}
                 </td>
                 {FIELDS.map((f) => {
                   const count = (s as unknown as Record<string, number>)[f.key] ?? 0;
@@ -125,7 +139,8 @@ export default async function AdminCoveragePage() {
                   );
                 })}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

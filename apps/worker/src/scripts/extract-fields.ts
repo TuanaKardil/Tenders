@@ -28,10 +28,15 @@ const withDocs = process.argv.includes("--with-docs");
 // deterministic estimate exceeds it, the script FAILS instead of spending.
 const maxCostIdx = process.argv.indexOf("--max-cost");
 const maxCost = maxCostIdx > -1 ? Number(process.argv[maxCostIdx + 1]) || null : null;
+// --source <slug>: restrict to one source (targeted backfills).
+const sourceIdx = process.argv.indexOf("--source");
+const sourceFilter = sourceIdx > -1 ? process.argv[sourceIdx + 1] ?? null : null;
 // Positional numeric limit — must NOT swallow a flag's value (e.g. "--max-cost 2").
 const tenderLimit =
   Number(
-    process.argv.find((a, i) => /^\d+$/.test(a) && i !== maxCostIdx + 1) ?? "0"
+    process.argv.find(
+      (a, i) => /^\d+$/.test(a) && i !== maxCostIdx + 1 && i !== sourceIdx + 1
+    ) ?? "0"
   ) || null;
 // Measured upper bound per tender (document-bearing Kenya ones): ~$0.0024.
 const EST_PER_TENDER = 0.003;
@@ -80,11 +85,14 @@ async function main() {
       description: tenders.summaryEn,
       noticeTypeAi: tenders.noticeTypeAi,
       unpublishReason: tenders.unpublishReason,
+      sourceSlug: sources.slug,
     })
     .from(tenders)
+    .innerJoin(sources, eq(tenders.sourceId, sources.id))
     .orderBy(asc(tenders.firstSeenAt));
 
   let pool = all ? rows : rows.filter((r) => r.noticeTypeAi === null);
+  if (sourceFilter) pool = pool.filter((r) => r.sourceSlug === sourceFilter);
   if (withDocs) {
     const withText = await db
       .selectDistinct({ id: documents.tenderId })

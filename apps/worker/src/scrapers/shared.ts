@@ -1,4 +1,5 @@
 import { COUNTRIES } from "@repo/config/constants";
+import { SAME_DOMAIN_DELAY_MS } from "@repo/config/source-contract";
 
 // English country name → ISO2, built from our constants + a few aliases.
 const NAME_TO_ISO2: Record<string, string> = {
@@ -98,4 +99,35 @@ export async function fetchHtml(url: string, init?: RequestInit): Promise<string
   });
   if (!res.ok) throw new Error(`${url} -> ${res.status}`);
   return res.text();
+}
+
+// ---------------------------------------------------------------------------
+// Polite fetching (source-contract standard for detail-page crawls):
+// ≥500ms between requests to the same domain, backoff+retry on 429/503.
+
+const lastHitByDomain = new Map<string, number>();
+
+async function throttleDomain(url: string): Promise<void> {
+  const domain = new URL(url).hostname;
+  const last = lastHitByDomain.get(domain) ?? 0;
+  const wait = last + SAME_DOMAIN_DELAY_MS - Date.now();
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  lastHitByDomain.set(domain, Date.now());
+}
+
+/** fetchHtml with same-domain rate limiting and 429/503 backoff (2 retries). */
+export async function politeFetchHtml(url: string, init?: RequestInit): Promise<string> {
+  for (let attempt = 0; ; attempt++) {
+    await throttleDomain(url);
+    const res = await fetch(url, {
+      ...init,
+      headers: { "User-Agent": UA, ...(init?.headers ?? {}) },
+    });
+    if ((res.status === 429 || res.status === 503) && attempt < 2) {
+      await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+      continue;
+    }
+    if (!res.ok) throw new Error(`${url} -> ${res.status}`);
+    return res.text();
+  }
 }

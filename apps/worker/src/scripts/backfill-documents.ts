@@ -3,6 +3,7 @@ import { db, tenders, documents, sources } from "@repo/db";
 import type { IngestNotice } from "@repo/config/ingest";
 import { fetchKenya } from "../scrapers/kenya";
 import { fetchTed } from "../scrapers/ted";
+import { fetchGuinea } from "../scrapers/guinea";
 
 /**
  * Populate the documents table with attachment URLs for EXISTING tenders.
@@ -21,6 +22,7 @@ const apply = process.argv.includes("--apply");
 const ADAPTERS: Record<string, () => Promise<IngestNotice[]>> = {
   "ke-ppip": fetchKenya,
   "ted-eu": fetchTed,
+  "gn-jao": fetchGuinea, // contract fetchDetail supplies documents[]
 };
 
 async function main() {
