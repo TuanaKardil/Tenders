@@ -109,6 +109,7 @@ async function main() {
             titleTr: out.title_tr,
             summaryEn: out.summary_en,
             summaryTr: out.summary_tr,
+            ...(out.eligibility_tr ? { eligibilityNotesTr: out.eligibility_tr } : {}),
             // Last consumer in the daily chain: mark this tender's document
             // set as fully merged. A doc extracted after this re-queues it.
             docsMergedAt: new Date(),

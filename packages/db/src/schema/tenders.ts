@@ -86,6 +86,8 @@ export const tenders = pgTable(
     // Eligibility
     eligibilityCountries: text("eligibility_countries").array().notNull().default([]),
     eligibilityNotesEn: text("eligibility_notes_en"),
+    /** Turkish rendering of the eligibility notes (derived in translate step). */
+    eligibilityNotesTr: text("eligibility_notes_tr"),
 
     documentsCount: integer("documents_count").notNull().default(0),
 

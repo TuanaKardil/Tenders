@@ -189,8 +189,12 @@ export default async function TenderPage({ params }: TenderPageProps) {
       <section className="mt-8">
         <h2 className="mb-3 text-sm font-semibold text-neutral-900">{t("eligibility")}</h2>
         <div className="rounded-xl border border-neutral-200 p-5 text-sm text-neutral-700">
-          {tender.eligibilityNotesEn ? (
-            <p>{tender.eligibilityNotesEn}</p>
+          {tender.eligibilityNotesEn || tender.eligibilityNotesTr ? (
+            <p>
+              {locale === "tr" && tender.eligibilityNotesTr
+                ? tender.eligibilityNotesTr
+                : tender.eligibilityNotesEn}
+            </p>
           ) : tender.eligibilityCountries.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {tender.eligibilityCountries.map((code) => (

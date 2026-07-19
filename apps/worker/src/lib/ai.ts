@@ -30,6 +30,8 @@ export interface TsOutput {
   title_tr: string;
   summary_en: string;
   summary_tr: string;
+  /** Turkish rendering of the eligibility notes (only when eligibility was in the input). */
+  eligibility_tr: string | null;
 }
 
 // The prompt text lives in the repo-root prompts/ folder (loaded at runtime).
@@ -82,6 +84,10 @@ export async function translateSummarize(input: TsInput): Promise<TsOutput> {
     title_tr: parsed.title_tr?.trim() || input.title,
     summary_en: stripFillerSentences(parsed.summary_en?.trim() || ""),
     summary_tr: stripFillerSentences(parsed.summary_tr?.trim() || ""),
+    eligibility_tr:
+      input.eligibility && parsed.eligibility_tr?.trim()
+        ? stripFillerSentences(parsed.eligibility_tr.trim())
+        : null,
   };
 }
 

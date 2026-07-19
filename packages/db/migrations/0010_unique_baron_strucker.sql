@@ -1,0 +1,1 @@
+ALTER TABLE "tenders" ADD COLUMN "eligibility_notes_tr" text;
