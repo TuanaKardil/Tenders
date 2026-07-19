@@ -121,6 +121,18 @@ export function mergeExtractedFields(
 }
 
 /**
+ * Tenders whose documents were extracted AFTER the last merge — the
+ * self-healing hook: late-arriving attachments put a tender back into the
+ * daily extract-fields + translate-summarize pools automatically.
+ * (Import kept here so the "stale" definition lives with the merge rule.)
+ */
+export const STALE_DOCS_SQL = `
+  select distinct d.tender_id from documents d
+  join tenders t on t.id = d.tender_id
+  where d.extracted_at is not null
+    and d.extracted_at > coalesce(t.docs_merged_at, 'epoch'::timestamptz)`;
+
+/**
  * Provenance stamp for SCRAPE-TIME inserts: every critical field the source
  * itself provided is "source_page". Used by the insert paths.
  */

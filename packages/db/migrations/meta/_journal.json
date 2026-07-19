@@ -64,6 +64,13 @@
       "when": 1784456687849,
       "tag": "0008_modern_rocket_raccoon",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784457973925,
+      "tag": "0009_curious_young_avengers",
+      "breakpoints": true
     }
   ]
 }

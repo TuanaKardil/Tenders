@@ -4,7 +4,8 @@ import { TENDERS_INDEX } from "@repo/config/search";
 import { getMeili } from "../meili";
 import { tenderToDoc } from "../lib/tender-doc";
 import { extractFields } from "../lib/ai";
-import { mergeExtractedFields, joinDocTexts } from "../lib/merge-tender";
+import { mergeExtractedFields, joinDocTexts, STALE_DOCS_SQL } from "../lib/merge-tender";
+import { sql } from "drizzle-orm";
 
 /**
  * AI structured field extraction (PIPELINE.md stage 5, second half).
@@ -73,7 +74,17 @@ async function main() {
     .innerJoin(sources, eq(tenders.sourceId, sources.id))
     .orderBy(asc(tenders.firstSeenAt));
 
-  let pool = all ? rows : rows.filter((r) => r.noticeTypeAi === null);
+  // Stale set: documents extracted after the tender's last merge — a tender
+  // whose attachment arrived LATE re-enters the pool automatically.
+  const staleRes = await db.execute(sql.raw(STALE_DOCS_SQL));
+  const staleIds = new Set(
+    ((Array.isArray(staleRes) ? staleRes : (staleRes as { rows?: unknown[] }).rows ?? []) as {
+      tender_id: string;
+    }[]).map((r) => r.tender_id)
+  );
+
+  let pool = all ? rows : rows.filter((r) => r.noticeTypeAi === null || staleIds.has(r.id));
+  if (staleIds.size > 0 && !all) console.log(`  (stale-docs: ${staleIds.size} tender re-queued)`);
   if (sourceFilter) pool = pool.filter((r) => r.sourceSlug === sourceFilter);
   if (withDocs) {
     const withText = await db

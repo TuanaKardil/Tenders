@@ -108,6 +108,13 @@ export const tenders = pgTable(
       .$type<Record<string, string>>()
       .notNull()
       .default({}),
+    /**
+     * Last time the AI pipeline consumed this tender's document texts.
+     * A document extracted AFTER this timestamp marks the tender "stale":
+     * the daily runs of extract-fields and translate-summarize pick it up
+     * again automatically (self-healing for late-arriving attachments).
+     */
+    docsMergedAt: timestamp("docs_merged_at", { withTimezone: true }),
     qualityScore: real("quality_score"),
     isPublished: boolean("is_published").notNull().default(false),
 

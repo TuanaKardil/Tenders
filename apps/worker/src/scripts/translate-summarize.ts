@@ -1,4 +1,5 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { STALE_DOCS_SQL } from "../lib/merge-tender";
 import { db, tenders, sources, documents } from "@repo/db";
 import { TENDERS_INDEX } from "@repo/config/search";
 import { getMeili } from "../meili";
@@ -39,7 +40,14 @@ async function main() {
     .innerJoin(sources, eq(tenders.sourceId, sources.id))
     .where(
       and(
-        all ? undefined : isNull(tenders.titleTr),
+        all
+          ? undefined
+          : or(
+              isNull(tenders.titleTr),
+              // Self-healing: docs extracted after the last merge re-queue the
+              // tender so summaries pick up late-arriving attachment content.
+              sql`${tenders.id} in (${sql.raw(STALE_DOCS_SQL)})`
+            ),
         sourceFilter ? eq(sources.slug, sourceFilter) : undefined
       )
     )
@@ -101,6 +109,9 @@ async function main() {
             titleTr: out.title_tr,
             summaryEn: out.summary_en,
             summaryTr: out.summary_tr,
+            // Last consumer in the daily chain: mark this tender's document
+            // set as fully merged. A doc extracted after this re-queues it.
+            docsMergedAt: new Date(),
             updatedAt: new Date(),
           })
           .where(eq(tenders.id, t.id));
