@@ -27,6 +27,10 @@ export interface Entitlements {
   csvExport: boolean;
   /** AI eligibility analysis block on detail pages. */
   eligibilityAi: boolean;
+  /** Tender QA assistant: questions per calendar month. */
+  aiQuestionsPerMonth: number;
+  /** Tender QA assistant: questions per tender per day. */
+  aiQuestionsPerTenderPerDay: number;
 }
 
 export const ENTITLEMENTS: Record<Plan, Entitlements> = {
@@ -41,6 +45,8 @@ export const ENTITLEMENTS: Record<Plan, Entitlements> = {
     aiSummaries: "sample",
     csvExport: false,
     eligibilityAi: false,
+    aiQuestionsPerMonth: 10,
+    aiQuestionsPerTenderPerDay: 3,
   },
   starter: {
     searchesPerDay: null,
@@ -53,6 +59,8 @@ export const ENTITLEMENTS: Record<Plan, Entitlements> = {
     aiSummaries: "all",
     csvExport: false,
     eligibilityAi: false,
+    aiQuestionsPerMonth: 250,
+    aiQuestionsPerTenderPerDay: 20,
   },
   pro: {
     searchesPerDay: null,
@@ -65,6 +73,8 @@ export const ENTITLEMENTS: Record<Plan, Entitlements> = {
     aiSummaries: "all",
     csvExport: true,
     eligibilityAi: true,
+    aiQuestionsPerMonth: 2000,
+    aiQuestionsPerTenderPerDay: 100,
   },
 };
 

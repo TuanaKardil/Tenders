@@ -15,6 +15,13 @@ export function tenderQaModel(): string {
 
 /** Hard caps (spec): question ≤500 chars; answer ≤250 tokens (+JSON envelope). */
 export const MAX_QUESTION_CHARS = 500;
+
+/** gpt-5-nano pricing (USD per 1M tokens) — for the usage ledger. */
+export const QA_PRICE_IN_PER_M = 0.05;
+export const QA_PRICE_OUT_PER_M = 0.4;
+export function estimateQaCost(inputTokens: number, outputTokens: number): number {
+  return (inputTokens * QA_PRICE_IN_PER_M + outputTokens * QA_PRICE_OUT_PER_M) / 1_000_000;
+}
 // Reasoning models spend part of the budget thinking — leave headroom so the
 // visible answer still fits ~250 tokens.
 const MAX_COMPLETION_TOKENS = 2000;

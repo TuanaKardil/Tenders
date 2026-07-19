@@ -271,6 +271,61 @@ export const dedupeCandidates = pgTable(
   (t) => [uniqueIndex("dedupe_candidates_pair_uq").on(t.tenderAId, t.tenderBId)]
 );
 
+/**
+ * Tender QA usage ledger — Postgres-based quotas, rate limits, cost tracking
+ * and abuse control (deliberately NO Redis). Counters are COUNT/SUM queries
+ * over this table.
+ */
+export const aiUsageEvents = pgTable(
+  "ai_usage_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull(),
+    tenderId: uuid("tender_id").notNull(),
+    /** sha256 of model + normalized question. */
+    questionHash: text("question_hash").notNull(),
+    model: text("model").notNull(),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    /** USD, from the model's token pricing. */
+    estimatedCost: real("estimated_cost").notNull().default(0),
+    /** answered | not_found | out_of_scope | cached | error */
+    status: text("status").notNull(),
+    /** Request IP for per-IP rate limiting. */
+    ip: text("ip"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("ai_usage_user_time_idx").on(t.userId, t.createdAt),
+    index("ai_usage_tender_idx").on(t.tenderId, t.createdAt),
+    index("ai_usage_time_idx").on(t.createdAt),
+  ]
+);
+
+/**
+ * Tender QA answer cache. knowledge_version = tender.updated_at epoch +
+ * document count — either changing invalidates naturally. 30-day TTL checked
+ * at read time.
+ */
+export const aiAnswerCache = pgTable(
+  "ai_answer_cache",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenderId: uuid("tender_id")
+      .notNull()
+      .references(() => tenders.id, { onDelete: "cascade" }),
+    questionHash: text("question_hash").notNull(),
+    knowledgeVersion: text("knowledge_version").notNull(),
+    answerJson: jsonb("answer_json")
+      .$type<{ status: string; language: string; answer: string; citations: unknown[] }>()
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("ai_answer_cache_key_uq").on(t.tenderId, t.questionHash, t.knowledgeVersion),
+  ]
+);
+
 export const featuredTenders = pgTable("featured_tenders", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenderId: uuid("tender_id")

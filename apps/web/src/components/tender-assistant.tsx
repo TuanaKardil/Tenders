@@ -24,6 +24,10 @@ export interface TenderAssistantLabels {
   signInCta: string;
   signInButton: string;
   error: string;
+  rateLimited: string;
+  quotaHit: string;
+  quotaUpgrade: string;
+  unavailable: string;
   suggested: string[];
 }
 
@@ -41,12 +45,12 @@ export function TenderAssistant({
   const [messages, setMessages] = useState<QaMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<null | "generic" | "rate" | "quota" | "unavailable">(null);
 
   async function ask(question: string) {
     const q = question.trim();
     if (!q || loading) return;
-    setError(false);
+    setError(null);
     setInput("");
     setMessages((m) => [...m, { role: "user", text: q }]);
     setLoading(true);
@@ -62,13 +66,25 @@ export function TenderAssistant({
         citations?: QaCitation[];
         error?: string;
       };
+      if (res.status === 429) {
+        setError(data.error === "rate_limited" ? "rate" : "quota");
+        setMessages((m) => m.slice(0, -1));
+        setInput(q);
+        return;
+      }
+      if (res.status === 503) {
+        setError("unavailable");
+        setMessages((m) => m.slice(0, -1));
+        setInput(q);
+        return;
+      }
       if (!res.ok || !data.answer) throw new Error(data.error ?? "failed");
       setMessages((m) => [
         ...m,
         { role: "assistant", text: data.answer!, status: data.status, citations: data.citations },
       ]);
     } catch {
-      setError(true);
+      setError("generic");
       setMessages((m) => m.slice(0, -1)); // drop the unanswered question
       setInput(q); // let the user retry
     } finally {
@@ -138,7 +154,21 @@ export function TenderAssistant({
             </div>
           )}
 
-          {error && <p className="mb-2 text-xs text-red-600">{labels.error}</p>}
+          {error && (
+            <div className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              {error === "rate" && labels.rateLimited}
+              {error === "unavailable" && labels.unavailable}
+              {error === "generic" && labels.error}
+              {error === "quota" && (
+                <>
+                  {labels.quotaHit}{" "}
+                  <a href="/pricing" className="font-medium underline">
+                    {labels.quotaUpgrade}
+                  </a>
+                </>
+              )}
+            </div>
+          )}
 
           <form
             onSubmit={(e) => {

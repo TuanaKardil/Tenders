@@ -281,6 +281,10 @@
     "error": "Something went wrong — please try again.",
     "q1": "What documents are required?",
     "q2": "What is the submission deadline?",
-    "q3": "Who can apply?"
+    "q3": "Who can apply?",
+    "rateLimited": "Too many questions — please wait a minute and try again.",
+    "quotaHit": "You've reached your plan's AI question limit.",
+    "quotaUpgrade": "Upgrade your plan",
+    "unavailable": "The assistant is temporarily unavailable. Please try again later."
   }
 }

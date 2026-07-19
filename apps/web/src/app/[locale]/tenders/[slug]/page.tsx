@@ -222,6 +222,10 @@ export default async function TenderPage({ params }: TenderPageProps) {
           signInCta: ta("signInCta"),
           signInButton: ta("signInButton"),
           error: ta("error"),
+          rateLimited: ta("rateLimited"),
+          quotaHit: ta("quotaHit"),
+          quotaUpgrade: ta("quotaUpgrade"),
+          unavailable: ta("unavailable"),
           suggested: [ta("q1"), ta("q2"), ta("q3")],
         }}
       />

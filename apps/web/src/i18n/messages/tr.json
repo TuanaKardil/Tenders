@@ -281,6 +281,10 @@
     "error": "Bir sorun oluştu — lütfen tekrar deneyin.",
     "q1": "Hangi belgeler gerekli?",
     "q2": "Son teklif tarihi ne zaman?",
-    "q3": "Kimler başvurabilir?"
+    "q3": "Kimler başvurabilir?",
+    "rateLimited": "Çok sık soru soruldu — bir dakika bekleyip tekrar deneyin.",
+    "quotaHit": "Planınızın yapay zeka soru limitine ulaştınız.",
+    "quotaUpgrade": "Planı yükselt",
+    "unavailable": "Asistan geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin."
   }
 }

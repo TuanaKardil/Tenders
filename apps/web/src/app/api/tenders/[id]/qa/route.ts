@@ -7,7 +7,17 @@ import {
   type TenderQaContext,
 } from "@repo/ai/tender-qa";
 import { getCurrentUser } from "@/server/auth";
+import { entitlementsForUser } from "@/server/plan";
 import { retrieveExcerpts } from "@/server/tender-qa-rag";
+import {
+  checkQaLimits,
+  questionHash,
+  knowledgeVersion,
+  cacheLookup,
+  cacheStore,
+  logUsage,
+} from "@/server/tender-qa-guard";
+import { tenderQaModel, estimateQaCost } from "@repo/ai/tender-qa";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +71,31 @@ export async function POST(
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
+  // Abuse / quota checks (PG-based; order: budget → rate → plan quotas).
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const ent = await entitlementsForUser(user.id);
+  const rejection = await checkQaLimits(user.id, t.id, ip, ent);
+  if (rejection) {
+    const status = rejection.reason === "budget_exhausted" ? 503 : 429;
+    return NextResponse.json({ error: rejection.reason, ...("limit" in rejection ? { limit: rejection.limit } : {}) }, { status });
+  }
+
+  // Cache: same tender + same normalized question + same knowledge → no AI call.
+  const qHash = questionHash(question);
+  const version = knowledgeVersion(t.updatedAt, t.documentsCount);
+  const cached = await cacheLookup(t.id, qHash, version);
+  if (cached) {
+    await logUsage({
+      userId: user.id,
+      tenderId: t.id,
+      questionHash: qHash,
+      model: tenderQaModel(),
+      status: "cached",
+      ip,
+    });
+    return NextResponse.json({ ...cached, cached: true });
+  }
+
   const docs = await db
     .select({ title: documents.title, url: documents.url })
     .from(documents)
@@ -99,14 +134,36 @@ export async function POST(
 
   try {
     const result = await answerTenderQuestion(context, question);
-    return NextResponse.json({
+    const payload = {
       status: result.status,
       language: result.language,
       answer: result.answer,
       citations: result.citations,
+    };
+    await cacheStore(t.id, qHash, version, payload);
+    await logUsage({
+      userId: user.id,
+      tenderId: t.id,
+      questionHash: qHash,
+      model: tenderQaModel(),
+      inputTokens: result.usage.prompt_tokens,
+      outputTokens: result.usage.completion_tokens,
+      estimatedCost: estimateQaCost(result.usage.prompt_tokens, result.usage.completion_tokens),
+      status:
+        result.status === "ANSWER" ? "answered" : result.status === "NOT_FOUND" ? "not_found" : "out_of_scope",
+      ip,
     });
+    return NextResponse.json(payload);
   } catch (err) {
     console.error(`[tender-qa] ${t.id}: ${(err as Error).message.slice(0, 200)}`);
+    await logUsage({
+      userId: user.id,
+      tenderId: t.id,
+      questionHash: qHash,
+      model: tenderQaModel(),
+      status: "error",
+      ip,
+    });
     return NextResponse.json({ error: "ai_unavailable" }, { status: 503 });
   }
 }
