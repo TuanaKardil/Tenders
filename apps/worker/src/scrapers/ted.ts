@@ -74,6 +74,52 @@ interface TedNotice {
   "classification-cpv"?: string[];
   "notice-type"?: string;
   links?: { pdf?: Record<string, string>; xml?: Record<string, string> };
+  // Structured fields (audited fill rates in comments):
+  "procedure-type"?: string; // 93% — open/restricted/negotiated
+  "contract-nature-main-proc"?: string; // 100% — works/supplies/services
+  "total-value"?: number | string; // 58% — contract total value
+  "total-value-cur"?: string | string[]; // 60% — its currency
+  "estimated-value-lot"?: (number | string)[]; // 33% — per-lot value
+  "estimated-value-cur-lot"?: string[];
+  "title-lot"?: Record<string, string[]>; // 100% — lot titles (per language)
+  "award-criterion-name-lot"?: Record<string, string[]>; // 68% — award criteria
+  "award-criterion-number-weight-lot"?: (number | string)[]; // 65% — their weights
+  "contract-duration-period-lot"?: { unit?: string; value?: string }[]; // 43% — duration
+}
+
+const NUM = (v: unknown): number | undefined => {
+  const n = typeof v === "string" ? Number(v.replace(/[^0-9.]/g, "")) : v;
+  return typeof n === "number" && Number.isFinite(n) && n > 0 ? n : undefined;
+};
+const FIRST = (v: unknown): string | undefined =>
+  Array.isArray(v) ? (v[0] as string | undefined) : (v as string | undefined);
+
+/** Build the per-lot breakdown from TED's parallel lot arrays. */
+function tedLots(n: TedNotice) {
+  const titles = n["title-lot"] ? (n["title-lot"].eng ?? Object.values(n["title-lot"])[0] ?? []) : [];
+  const values = n["estimated-value-lot"] ?? [];
+  const currs = n["estimated-value-cur-lot"] ?? [];
+  const critNames = n["award-criterion-name-lot"]
+    ? (n["award-criterion-name-lot"].eng ?? Object.values(n["award-criterion-name-lot"])[0] ?? [])
+    : [];
+  const critWeights = n["award-criterion-number-weight-lot"] ?? [];
+  const durations = n["contract-duration-period-lot"] ?? [];
+  const count = Math.max(titles.length, values.length, durations.length);
+  if (count === 0) return undefined;
+
+  const lots = [];
+  for (let i = 0; i < count; i++) {
+    const criteria = critNames.map((name, j) => ({ name, weight: NUM(critWeights[j]) }));
+    const dur = durations[i];
+    lots.push({
+      title: titles[i],
+      estimated_value: NUM(values[i]),
+      currency: currs[i],
+      award_criteria: i === 0 && criteria.length ? criteria : undefined,
+      duration: dur?.value ? `${dur.value} ${dur.unit ?? ""}`.trim() : undefined,
+    });
+  }
+  return lots.length ? lots : undefined;
 }
 
 /** The official notice PDF (prefer English) — TED's real content lives there. */
@@ -124,6 +170,16 @@ async function fetchPage(cpv: string, sinceIso: string): Promise<TedNotice[]> {
         "classification-cpv",
         "notice-type",
         "links",
+        "procedure-type",
+        "contract-nature-main-proc",
+        "total-value",
+        "total-value-cur",
+        "estimated-value-lot",
+        "estimated-value-cur-lot",
+        "title-lot",
+        "award-criterion-name-lot",
+        "award-criterion-number-weight-lot",
+        "contract-duration-period-lot",
       ],
     }),
   });
@@ -176,9 +232,14 @@ export async function fetchTed(): Promise<IngestNotice[]> {
         sector: sectorFromCpv(n["classification-cpv"]),
         cpv_codes: cpvCodes,
         notice_type: n["notice-type"] ?? undefined,
+        procurement_method: n["procedure-type"] ?? undefined,
+        contract_type: n["contract-nature-main-proc"] ?? undefined,
+        estimated_value_max: NUM(n["total-value"]),
+        currency: FIRST(n["total-value-cur"]),
         published_at: safeIso(n["publication-date"]),
         closing_at: safeIso(deadline),
         documents: tedDocuments(n.links, num),
+        lots: tedLots(n),
       });
     }
   }

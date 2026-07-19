@@ -91,6 +91,7 @@ export async function processNormalizeJob(job: Job<NormalizeJob>) {
     noticeTypeRaw: data.notice_type ?? null,
     procurementMethod: data.procurement_method ?? null,
     contractType: data.contract_type ?? null,
+    lots: data.lots ?? null,
     publishedAt: toDate(data.published_at),
     closingAt: toDate(data.closing_at),
     questionDeadline: toDate(data.question_deadline),

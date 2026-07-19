@@ -44,6 +44,18 @@ export const ingestNoticeSchema = z.object({
       })
     )
     .optional(),
+  /** Structured lot breakdown (TED etc.): per-lot title, value, criteria, duration. */
+  lots: z
+    .array(
+      z.object({
+        title: z.string().optional(),
+        estimated_value: z.number().nonnegative().optional(),
+        currency: z.string().length(3).optional(),
+        award_criteria: z.array(z.object({ name: z.string(), weight: z.number().optional() })).optional(),
+        duration: z.string().optional(),
+      })
+    )
+    .optional(),
 });
 
 export const ingestBatchSchema = z.object({

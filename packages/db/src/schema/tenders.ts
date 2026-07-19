@@ -71,6 +71,17 @@ export const tenders = pgTable(
     noticeTypeAi: text("notice_type_ai"),
     procurementMethod: text("procurement_method"),
     contractType: text("contract_type"),
+    /** Per-lot breakdown (title, estimated value, award criteria, duration) — from TED etc. */
+    lots: jsonb("lots")
+      .$type<
+        {
+          title?: string;
+          estimated_value?: number;
+          currency?: string;
+          award_criteria?: { name: string; weight?: number }[];
+          duration?: string;
+        }[]
+      >(),
 
     // Dates
     publishedAt: timestamp("published_at", { withTimezone: true }),
