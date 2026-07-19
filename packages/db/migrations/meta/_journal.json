@@ -120,6 +120,13 @@
       "when": 1784490640469,
       "tag": "0016_tired_silver_fox",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1784490790000,
+      "tag": "0017_open_flatman",
+      "breakpoints": true
     }
   ]
 }

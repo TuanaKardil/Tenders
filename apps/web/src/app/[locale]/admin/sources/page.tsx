@@ -1,5 +1,5 @@
 import { asc, desc, eq, sql } from "drizzle-orm";
-import { db, sources, ingestionRuns, tenders } from "@repo/db";
+import { db, sources, ingestionRuns, tenders, documentCoverageAudits } from "@repo/db";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -72,6 +72,23 @@ export default async function AdminSourcesPage() {
     return recent.avgDocs < baseline * 0.7;
   };
 
+  // 6c — audit mismatch rate per source (expected > actual). >20% → red flag.
+  const auditRates = await db
+    .select({
+      sourceId: tenders.sourceId,
+      total: sql<number>`cast(count(*) as int)`,
+      mismatches: sql<number>`cast(count(*) filter (where ${documentCoverageAudits.expectedCount} > ${documentCoverageAudits.actualCount}) as int)`,
+    })
+    .from(documentCoverageAudits)
+    .innerJoin(tenders, eq(documentCoverageAudits.tenderId, tenders.id))
+    .groupBy(tenders.sourceId);
+  const auditBySource = new Map(auditRates.map((r) => [r.sourceId, r]));
+  const selectorBroken = (sourceId: string): boolean => {
+    const a = auditBySource.get(sourceId);
+    if (!a || a.total < 3) return false; // need a few samples
+    return a.mismatches / a.total > 0.2;
+  };
+
   return (
     <div>
       <h1 className="mb-6 text-xl font-semibold">Sources</h1>
@@ -142,6 +159,14 @@ export default async function AdminSourcesPage() {
                           title={`Son 3 günün belge oranı 30 gün ortalamasının (${source.avgDocsPerTender30d?.toFixed(2)}) %30+ altında`}
                         >
                           belge oranı düşük
+                        </Badge>
+                      )}
+                      {selectorBroken(source.id) && (
+                        <Badge
+                          variant="destructive"
+                          title="Denetim örneklemlerinin %20'sinden fazlasında sitede olan belge DB'de yok"
+                        >
+                          seçici kırılmış olabilir
                         </Badge>
                       )}
                     </div>

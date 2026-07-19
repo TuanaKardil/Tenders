@@ -90,3 +90,8 @@ jobs:
       # 9. Alert matching + email dispatch (tolerates missing RESEND_API_KEY).
       - name: Run alerts
         run: pnpm exec tsx src/scripts/run-alerts.ts
+
+      # 10. Coverage spot-check — 1 random tender per detail-fetch source has
+      # its detail page re-audited for document links (never fails the run).
+      - name: Coverage spot-check
+        run: pnpm exec tsx src/scripts/audit-coverage.ts --apply || true

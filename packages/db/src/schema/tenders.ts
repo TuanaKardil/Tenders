@@ -171,6 +171,32 @@ export const documents = pgTable(
   (t) => [index("documents_tender_idx").on(t.tenderId)]
 );
 
+/**
+ * Spot-check audit (6c): once per ingestion run, one random tender per
+ * detail-fetch source has its detail page re-fetched and its document links
+ * counted INDEPENDENTLY of the scraper — so a broken selector shows up as
+ * expected_count > actual_count with the missed URLs recorded.
+ */
+export const documentCoverageAudits = pgTable(
+  "document_coverage_audits",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenderId: uuid("tender_id")
+      .notNull()
+      .references(() => tenders.id, { onDelete: "cascade" }),
+    /** ingestion_runs.id when available (null for manual audits). */
+    runId: uuid("run_id"),
+    /** Document links found on the live detail page. */
+    expectedCount: integer("expected_count").notNull(),
+    /** documents_count stored in the DB at audit time. */
+    actualCount: integer("actual_count").notNull(),
+    /** URLs present on the page but missing from the DB. */
+    missedUrls: text("missed_urls").array().notNull().default([]),
+    sampledAt: timestamp("sampled_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("doc_coverage_audits_time_idx").on(t.sampledAt)]
+);
+
 export const dedupeClusters = pgTable("dedupe_clusters", {
   id: uuid("id").primaryKey().defaultRandom(),
   /** The tender shown to users (primary); other members stay hidden from search. */
