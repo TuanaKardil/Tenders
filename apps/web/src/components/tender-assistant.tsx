@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -162,9 +163,9 @@ export function TenderAssistant({
               {error === "quota" && (
                 <>
                   {labels.quotaHit}{" "}
-                  <a href="/pricing" className="font-medium underline">
+                  <Link href="/pricing" className="font-medium underline">
                     {labels.quotaUpgrade}
-                  </a>
+                  </Link>
                 </>
               )}
             </div>
