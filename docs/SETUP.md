@@ -2,6 +2,11 @@
 
 All the services the code expects and where each key goes. Full list: `/.env.example`.
 Rule: **secret keys go only in `.env` / `apps/web/.env.local`** — they are never committed to git.
+Last synced to actual state: **2026-07-21**.
+
+> Automation note: the regular pipeline now runs as a **GitHub Actions cron**, not a
+> continuously-running worker. Redis (Upstash) is no longer required for the daily run — quota
+> counters were moved to Postgres. See item 3 and the "GitHub Actions" section.
 
 ## Priority 1 — Run the app with real accounts
 
@@ -32,10 +37,22 @@ CLERK_SECRET_KEY=sk_test_...
    - Signing secret → `CLERK_WEBHOOK_SECRET`
 5. Turkish UI: Customization → Localization → Turkish.
 
-### 3. Upstash Redis (live queues)
+### 3. AI keys (required — pipeline + chatbot)
+The AI pipeline and the tender-assistant chatbot are live and need these in `.env`:
+```
+OPENROUTER_API_KEY=sk-or-v1-...      # pipeline (Flash-Lite) + chatbot (gpt-5-nano)
+GOOGLE_AI_API_KEY=AIza...            # embeddings (dedup, alerts, chatbot RAG) — gemini-embedding-001
+TENDER_QA_MODEL=openai/gpt-5-nano    # chatbot model (override-able)
+AI_CHAT_DAILY_BUDGET_USD=5           # chatbot platform-wide daily spend kill-switch
+```
+There is no Anthropic key anymore — everything goes through the single OpenRouter client plus Google
+AI Studio for embeddings.
+
+### 4. Upstash Redis (optional — only if the BullMQ worker path is re-activated)
+The regular pipeline runs on GitHub Actions and does **not** need Redis. Only set this up if you
+re-enable the continuously-running BullMQ workers:
 1. console.upstash.com → Create Database: `tenderlist`, region eu-central-1, TLS enabled
 2. "Redis URL" (`rediss://default:...`) → `REDIS_URL`
-- Locally, brew Redis is enough; this value is for deploy.
 
 ## Priority 2 — Payments (Phase 1d)
 
@@ -63,20 +80,26 @@ cloud.meilisearch.com → project → `MEILISEARCH_HOST`, `MEILISEARCH_ADMIN_KEY
 After setup, index settings + full reindex:
 `cd apps/worker && pnpm exec tsx src/scripts/meili-setup.ts --reindex`
 
-### 7. Resend (email)
-1. resend.com → Domains → add the domain → enter the DKIM/SPF DNS records
-2. API key → `RESEND_API_KEY`, sender → `EMAIL_FROM="Tenderlist <alerts@DOMAIN>"`
-- Without `RESEND_API_KEY` the worker doesn't send emails, it logs them (dev mode).
+### 7. Resend (email) — key set, domain still pending
+1. `RESEND_API_KEY` is already set. **But** `EMAIL_FROM` is a placeholder (`onboarding@resend.dev`),
+   which only delivers to the account owner's own address.
+2. To send to real users: resend.com → Domains → add the real domain → enter the DKIM/SPF DNS
+   records → set `EMAIL_FROM="Tenderlist <alerts@DOMAIN>"`.
+- Without a verified domain the alert step tolerates it (logs "dev, not sent"); no crash.
 
-### 8. Railway (worker)
-railway.app → connect via GitHub → `TuanaKardil/Tenders` repo.
-Service settings: root `apps/worker`, start `pnpm exec tsx src/index.ts`.
-Env: `DATABASE_URL` (pooled), `REDIS_URL`, `MEILISEARCH_HOST/ADMIN_KEY`,
-`RESEND_API_KEY`, `EMAIL_FROM`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_APP_URL`.
+### 8. GitHub Actions (the daily pipeline)
+The regular pipeline runs from `.github/workflows/daily-pipeline.yml` (cron 05:00 UTC), **not** a
+Railway worker. Before enabling it (currently `disabled_manually`):
+1. Add the repo secrets listed in `.github/workflows/README.md`: `DATABASE_URL`,
+   `MEILISEARCH_HOST/ADMIN_KEY`, `OPENROUTER_API_KEY`, `GOOGLE_AI_API_KEY`, `AI_CHAT_DAILY_BUDGET_USD`,
+   and `RESEND_API_KEY` / `EMAIL_FROM` once email is live.
+2. Test with **Run workflow** (`workflow_dispatch`), then enable the cron.
+- A Railway worker is only needed if you re-activate the BullMQ path (not required for the cron).
 
 ### 9. Vercel (web)
 vercel.com/new → import `TuanaKardil/Tenders` → Root Directory: `apps/web`.
-Env: all web variables from `.env.example`.
+Env: all web variables from `.env.example`, including `OPENROUTER_API_KEY`, `GOOGLE_AI_API_KEY`,
+`TENDER_QA_MODEL`, `AI_CHAT_DAILY_BUDGET_USD` (the chatbot runs in the web app).
 
 ### 10. PostHog + Sentry (Phase 1e)
 - posthog.com (EU) → `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`
