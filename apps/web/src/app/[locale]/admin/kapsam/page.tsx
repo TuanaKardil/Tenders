@@ -139,6 +139,30 @@ export default async function AdminCoveragePage() {
     }
   }
 
+  // Full per-source document coverage — EVERY source visible, including those
+  // whose detail pages we don't fetch yet (their on-site count is unknown).
+  const docCoverage = await db
+    .select({
+      slug: sources.slug,
+      tenders: sql<number>`cast(count(distinct ${tenders.id}) as int)`,
+      withDocs: sql<number>`cast(count(distinct ${tenders.id}) filter (where ${tenders.documentsCount} > 0) as int)`,
+      totalDocs: sql<number>`cast(coalesce(sum(${tenders.documentsCount}), 0) as int)`,
+    })
+    .from(tenders)
+    .innerJoin(sources, eq(tenders.sourceId, sources.id))
+    .groupBy(sources.slug)
+    .orderBy(sql`count(distinct ${tenders.id}) desc`);
+  // Extraction status per source (docs with extracted text).
+  const extractedBySource = await db.execute(sql`
+    select s.slug, count(*)::int as total, count(*) filter (where d.extracted_text is not null)::int as extracted
+    from documents d join tenders t on t.id = d.tender_id join sources s on s.id = t.source_id
+    group by s.slug`);
+  const extractedMap = new Map(
+    ((Array.isArray(extractedBySource) ? extractedBySource : (extractedBySource as { rows?: unknown[] }).rows ?? []) as {
+      slug: string; total: number; extracted: number;
+    }[]).map((r) => [r.slug, r])
+  );
+
   return (
     <div>
       <h1 className="mb-1 text-xl font-semibold">Kaynak kapsamı</h1>
@@ -255,6 +279,60 @@ export default async function AdminCoveragePage() {
                 })}
               </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Full document coverage — every source, fetched vs unknown */}
+      <h2 className="mb-1 mt-10 text-lg font-semibold">Belge kapsama — tüm kaynaklar</h2>
+      <p className="mb-4 max-w-3xl text-sm text-neutral-500">
+        Kaynak başına: kaç ihale, kaçında belge var, DB&apos;deki belge sayısı ve kaçının metni
+        çıkarıldı. Detay sayfası çekilmeyen kaynaklarda sitedeki gerçek belge sayısı{" "}
+        <b>bilinmiyor</b> — &quot;çekilmiyor&quot; olarak işaretli (backlog).
+      </p>
+      <div className="mb-8 overflow-x-auto rounded-lg border border-neutral-200 bg-white">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-neutral-200 text-xs text-neutral-500">
+              <th className="px-4 py-2 text-left font-medium">Kaynak</th>
+              <th className="px-3 py-2 text-right font-medium">İhale</th>
+              <th className="px-3 py-2 text-right font-medium">Belgeli ihale</th>
+              <th className="px-3 py-2 text-right font-medium">Belge (DB)</th>
+              <th className="px-3 py-2 text-right font-medium">Metni çıkarılan</th>
+              <th className="px-3 py-2 text-left font-medium">Detay çekimi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {docCoverage.map((r) => {
+              const ex = extractedMap.get(r.slug);
+              const fetches = DETAIL_FETCH_SOURCES.includes(r.slug);
+              const listDocs = ["ke-ppip", "ted-eu"].includes(r.slug); // list payload carries docs
+              return (
+                <tr key={r.slug} className="border-b border-neutral-100">
+                  <td className="px-4 py-2 font-medium">{SOURCE_TR[r.slug] ?? r.slug}</td>
+                  <td className="px-3 py-2 text-right">{r.tenders}</td>
+                  <td className="px-3 py-2 text-right">
+                    {r.withDocs} <span className="text-xs text-neutral-400">(%{Math.round((100 * r.withDocs) / r.tenders)})</span>
+                  </td>
+                  <td className="px-3 py-2 text-right">{r.totalDocs}</td>
+                  <td className="px-3 py-2 text-right">
+                    {ex ? `${ex.extracted}/${ex.total}` : "—"}
+                    {ex && ex.extracted < ex.total && <span className="ml-1 text-amber-600">⚠</span>}
+                  </td>
+                  <td className="px-3 py-2">
+                    {fetches ? (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">detay + belgeler</span>
+                    ) : listDocs ? (
+                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">liste API&apos;sinden</span>
+                    ) : (
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-800" title="Sitedeki belge sayısı bilinmiyor — docs/BACKLOG.md">
+                        çekilmiyor (backlog)
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

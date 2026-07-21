@@ -3,6 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db, tenders, sources, documents, documentCoverageAudits } from "@repo/db";
 import { DETAIL_FETCH_SOURCES } from "@repo/config/source-contract";
 import { politeFetchHtml } from "../scrapers/shared";
+import { extractScanImages } from "../scrapers/guinea";
 
 /**
  * Spot-check document-coverage audit (6c). Once per run, for each detail-fetch
@@ -35,6 +36,9 @@ function countDocLinks(html: string, pageUrl: string): string[] {
     if (abs.hostname.replace(/^www\./, "") !== base.hostname.replace(/^www\./, "")) return;
     seen.add(abs.toString());
   });
+  // Embedded notice-scan images count as documents too (same heuristic the
+  // Guinea scraper uses) — otherwise image-based posts audit as "0 on page".
+  for (const img of extractScanImages(html)) seen.add(img);
   return [...seen];
 }
 

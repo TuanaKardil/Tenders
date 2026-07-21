@@ -19,7 +19,7 @@ export const DOWNLOAD_TIMEOUT_MS = 30_000; // 30s per download
 
 const UA = "Mozilla/5.0 AppleWebKit/537.36 Chrome/120 Safari/537.36";
 
-export type FileKind = "pdf" | "docx" | "doc" | "xlsx" | "png" | "jpg";
+export type FileKind = "pdf" | "docx" | "doc" | "xlsx" | "png" | "jpg" | "webp";
 export type ExtractionMethod =
   | "pdf-parse"
   | "mammoth"
@@ -38,6 +38,7 @@ export function fileKind(fileType: string | null, url: string): FileKind | null 
   if (t.includes("xlsx") || t === "xls" || t.includes("spreadsheetml")) return "xlsx";
   if (t.includes("png")) return "png";
   if (t.includes("jpg") || t.includes("jpeg")) return "jpg";
+  if (t.includes("webp")) return "webp";
   return null; // zip, exe, etc. → skip
 }
 
@@ -99,9 +100,10 @@ export async function downloadDocument(
   }
 }
 
-const MIME: Record<"png" | "jpg", string> = {
+const MIME: Record<"png" | "jpg" | "webp", string> = {
   png: "image/png",
   jpg: "image/jpeg",
+  webp: "image/webp",
 };
 
 export interface ExtractResult {

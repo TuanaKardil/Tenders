@@ -101,6 +101,30 @@ const DEADLINE_RES: RegExp[] = [
 const DOC_EXT_RE = /\.(pdf|docx?|xlsx?)(?:\?|#|$)/i;
 
 /**
+ * Some jaoguinee posts publish the notice as EMBEDDED SCAN IMAGES in the body
+ * (page-0001.jpg…) instead of attachments. Heuristic: uploads image, not a
+ * site asset (logo/banner/_lwsoptimized), and either a page-N filename or a
+ * large rendition (min side ≥ 500px). The -WxH thumbnail suffix is stripped
+ * so the FULL-SIZE original goes to OCR.
+ */
+export function extractScanImages(html: string): string[] {
+  const seen = new Set<string>();
+  for (const m of html.matchAll(/<img[^>]*src="([^"]*wp-content\/uploads[^"]*)"/gi)) {
+    let u = m[1]!;
+    if (/_lwsoptimized|logo|banniere|armoirie|profile/i.test(u)) continue;
+    const dim = u.match(/-(\d{2,4})x(\d{2,4})\.(jpe?g|png|webp)/i);
+    const big = dim ? Math.min(Number(dim[1]), Number(dim[2])) >= 500 : false;
+    const pageName = /page[-_]?\d+/i.test(u);
+    if (!pageName && !big) continue;
+    // strip WP thumbnail suffix → full-size original
+    u = u.replace(/-\d{2,4}x\d{2,4}(\.(?:jpe?g|png|webp))/i, "$1");
+    if (!u.startsWith("http")) u = `${BASE}${u.startsWith("/") ? "" : "/"}${u}`;
+    seen.add(u);
+  }
+  return [...seen];
+}
+
+/**
  * Contract-standard detail fetch. Extracts closing date (when the body states
  * one), attachment links (absolute URLs) and a ≤300-char description snippet.
  * The full body is NEVER returned — yellow-license red line.
@@ -140,6 +164,17 @@ export async function fetchDetail(url: string): Promise<DetailPageData> {
       file_type: abs.toLowerCase().match(DOC_EXT_RE)?.[1],
     });
   });
+
+  // Embedded notice scans (no attachment links on some posts) — never skip a document.
+  for (const img of extractScanImages(html)) {
+    if (seen.has(img)) continue;
+    seen.add(img);
+    documents.push({
+      title: img.split("/").pop()?.slice(0, 200),
+      url: img,
+      file_type: img.toLowerCase().match(/\.(jpe?g|png|webp)/)?.[1]?.replace("jpeg", "jpg"),
+    });
+  }
 
   return {
     closing_at: closing,
